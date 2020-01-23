@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use('/', express.static(__dirname + '/public'))
 
-
+app.use(cache('5 minutes'));
 app.get('/dates', async (req, res) => {
     const dates = await regions.getDates(req.query.address);
     res.send(dates);
@@ -17,5 +17,4 @@ app.get('/dates', async (req, res) => {
 
 
 app.use(cors());
-// app.use(cache('5 minutes'));
 app.listen(process.env.PORT, console.log("Server stared on port " + process.env.PORT));

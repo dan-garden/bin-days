@@ -1,0 +1,25 @@
+{
+  "street": "Bird Street",
+  "postalCode": "L13",
+  "geocodeQualityCode": "B1AXX",
+  "geocodeQuality": "STREET",
+  "dragPoint": false,
+  "sideOfStreet": "N",
+  "linkId": "0",
+  "unknownInput": "",
+  "type": "s",
+  "latLng": {
+    "lat": 53.396918,
+    "lng": -2.941821
+  },
+  "displayLatLng": {
+    "lat": 53.396918,
+    "lng": -2.941821
+  },
+  "mapUrl": "http://open.mapquestapi.com/staticmap/v5/map?key=yHXfJ411qysld8qnmJE5GNDiBtJA9PkG&type=map&size=225,160&locations=53.3969179,-2.941821|marker-sm-50318A-1&scalebar=true&zoom=15&rand=-1355533293",
+  "suburb": "Wavertree",
+  "city": "Liverpool",
+  "county": "",
+  "state": "England",
+  "country": "GB"
+}

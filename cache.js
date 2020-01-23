@@ -29,4 +29,10 @@ module.exports = class Cache {
             return false;
         }
     }
+
+    startClearing() {
+        setInterval(() => {
+            
+        });
+    }
 }

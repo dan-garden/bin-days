@@ -1,0 +1,25 @@
+{
+  "street": "Brisbane Road (Gold Coast Highway)",
+  "postalCode": "4216",
+  "geocodeQualityCode": "B1XXX",
+  "geocodeQuality": "STREET",
+  "dragPoint": false,
+  "sideOfStreet": "N",
+  "linkId": "0",
+  "unknownInput": "",
+  "type": "s",
+  "latLng": {
+    "lat": -27.933849,
+    "lng": 153.387296
+  },
+  "displayLatLng": {
+    "lat": -27.933849,
+    "lng": 153.387296
+  },
+  "mapUrl": "http://open.mapquestapi.com/staticmap/v5/map?key=yHXfJ411qysld8qnmJE5GNDiBtJA9PkG&type=map&size=225,160&locations=-27.9338495,153.3872958|marker-sm-50318A-1&scalebar=true&zoom=15&rand=-1222462226",
+  "suburb": "Biggera Waters",
+  "city": "Gold Coast",
+  "county": "",
+  "state": "Queensland",
+  "country": "AU"
+}

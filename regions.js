@@ -24,6 +24,7 @@ class Regions {
     }
 
     static async geocodeAddress(address) {
+        console.log(address);
         try {
             if(!address || address.trim() === "") {
                 throw new Error("Please do not leave address blank.");
@@ -33,7 +34,7 @@ class Regions {
             const cache = storage.getCache(cacheKey);
 
             if(cache) {
-                console.log("cache found");
+                // console.log("cache found");
                 return cache;
             } else {
                 const result = await new Promise((resolve, reject) => {
@@ -44,6 +45,7 @@ class Regions {
                         if(err) {
                             reject(err);
                         } else {
+                            console.log(location);
                             location = this.parseLocation(location);
                             resolve(location);
                         }
@@ -80,7 +82,6 @@ class Regions {
     static async getDates(address) {
         try {
             const location = await this.geocodeAddress(address);
-            // console.log(location);
             const regions = this.getRegions();
             let {country, state, county, city, suburb, street} = location;
             state = state.split(" ").join("").toLowerCase();
