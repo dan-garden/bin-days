@@ -42,10 +42,11 @@ describe('website pages', () => {
   it('serves the home page as the UI with crawlable content in it', async () => {
     const { response, body } = await get('/');
     expect(response.headers.get('cache-control')).toContain('s-maxage');
-    expect(body).toContain('<title>Bin Day: which bins go out this week?</title>');
+    expect(body).toContain('<title>Bin Days: which bins go out this week?</title>');
     expect(body).not.toContain('<title>Default</title>');
     expect(body).toContain('<link rel="canonical" href="https://binday.test/" />');
-    expect(body).toContain('Free for 2 Australian councils, including Brisbane, Ballarat.');
+    expect(body).toContain('Free for 2 Australian councils, including Brisbane.');
+    expect(body).toContain('<a href="/bin-day/qld">Queensland bin days</a>');
     expect(body).toContain('<a href="/bin-day/qld/brisbane">Brisbane bin day</a>');
     expect(body).toContain('<a href="/bin-day/vic/ballarat">Ballarat bin day</a>');
     expect(body).toContain('<script src="/assets/app.js"></script>'); // the UI still loads
@@ -67,10 +68,64 @@ describe('website pages', () => {
         state: 'QLD',
         website: 'https://example.org/bins?a=1&b=2',
       },
+      nearby: [],
     });
     for (const block of body.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)) {
       expect(JSON.parse(block[1] ?? '')['@context']).toBe('https://schema.org');
     }
+  });
+
+  it('gives each state a page listing its councils', async () => {
+    const { body } = await get('/bin-day/VIC');
+    expect(body).toContain("<title>Victoria bin days: find your council's collection day</title>");
+    expect(body).toContain('<link rel="canonical" href="https://binday.test/bin-day/vic" />');
+    expect(body).toContain('<a href="/bin-day/vic/ballarat">Ballarat bin day</a>');
+    expect(body).not.toContain('/bin-day/qld/brisbane');
+    expect(body).toContain('"state":"VIC"');
+    expect((await get('/bin-day/wa')).response.status).toBe(404); // no councils there
+    expect((await get('/bin-day/zz')).response.status).toBe(404);
+  });
+
+  it('links a council to its state and its nearest neighbours', async () => {
+    const square = (x: number, y: number) => ({
+      type: 'Polygon',
+      coordinates: [
+        [
+          [x, y],
+          [x + 0.1, y],
+          [x + 0.1, y + 0.1],
+          [x, y],
+        ],
+      ],
+    });
+    const feature = (council: string, name: string, x: number, y: number) => ({
+      type: 'Feature' as const,
+      properties: { council, name, state: 'QLD' as const },
+      geometry: square(x, y),
+    });
+    const coverage = async () => ({
+      type: 'FeatureCollection' as const,
+      features: [
+        feature('qld/brisbane', 'Brisbane City Council', 153.0, -27.5),
+        feature('qld/far', 'Far Away Shire Council', 145.0, -17.0),
+        feature('qld/near', 'Near City Council', 153.2, -27.7),
+      ],
+    });
+    const { body } = await get('/bin-day/qld/brisbane', { coverage });
+    expect(body).toContain(
+      '<a href="/">Bin Days</a> › <a href="/bin-day/qld">Queensland</a> › Brisbane bin day',
+    );
+    const near = body.indexOf('/bin-day/qld/near');
+    expect(near).toBeGreaterThan(-1);
+    expect(near).toBeLessThan(body.indexOf('/bin-day/qld/far')); // nearest first
+    expect(body).toContain('"@type":"BreadcrumbList"');
+
+    // The page still works when the boundary service is down.
+    const down = await get('/bin-day/qld/brisbane', {
+      coverage: () => Promise.reject(new Error('down')),
+    });
+    expect(down.response.status).toBe(200);
+    expect(down.body).not.toContain('Councils near');
   });
 
   it('returns 404 for a council that is not supported', async () => {
@@ -95,6 +150,8 @@ describe('files for crawlers and language models', () => {
     expect(sitemap.response.headers.get('content-type')).toContain('application/xml');
     expect([...sitemap.body.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1])).toEqual([
       'https://binday.test/',
+      'https://binday.test/bin-day/qld',
+      'https://binday.test/bin-day/vic',
       'https://binday.test/bin-day/qld/brisbane',
       'https://binday.test/bin-day/vic/ballarat',
     ]);
@@ -103,8 +160,8 @@ describe('files for crawlers and language models', () => {
 
   it('explains the API to language models in llms.txt', async () => {
     const { body } = await get('/llms.txt');
-    expect(body).toMatch(/^# Bin Day\n\n> /);
+    expect(body).toMatch(/^# Bin Days\n\n> /);
     expect(body).toContain('https://binday.test/v1/collections?address=');
-    expect(body).toContain('- [City of Ballarat (VIC)](https://binday.test/bin-day/vic/ballarat)');
+    expect(body).toContain('- [City of Ballarat](https://binday.test/bin-day/vic/ballarat)');
   });
 });

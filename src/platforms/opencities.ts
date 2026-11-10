@@ -2,11 +2,17 @@ import * as cheerio from 'cheerio';
 import { z } from 'zod';
 import { formatStreetLine, matchesHouseNumber } from '../core/address.js';
 import { classifyBin, DEFAULT_COLOURS } from '../core/bin-types.js';
-import { parseAustralianDate } from '../core/date.js';
+import { addDays, parseAustralianDate, parseWeekday, weekdayIndex } from '../core/date.js';
 import { addressNotFound, parseError, upstreamError } from '../core/errors.js';
 import { getJson, type HttpClient } from '../core/http.js';
 import { parseFrequency } from '../core/schedule.js';
-import type { BinService, BinType, CouncilSchedule, ResolvedAddress } from '../core/types.js';
+import type {
+  BinService,
+  BinType,
+  CouncilSchedule,
+  LocalDate,
+  ResolvedAddress,
+} from '../core/types.js';
 import type { CouncilAdapter, CouncilInfo } from '../councils/types.js';
 
 /**
@@ -56,8 +62,9 @@ const WasteResponse = z.object({
 });
 
 export function createOpenCitiesCouncil(config: OpenCitiesConfig): CouncilAdapter {
-  const { baseUrl, sessionPagePath, binTypes = {}, colours = {}, ...info } = config;
+  const { baseUrl, sessionPagePath, binTypes = {}, colours = {}, ...council } = config;
   const base = baseUrl.replace(/\/$/, '');
+  const info = { website: base, ...council };
 
   async function search(http: HttpClient, keywords: string) {
     const url = `${base}/api/v1/myarea/search?keywords=${encodeURIComponent(keywords)}`;
@@ -87,9 +94,11 @@ export function createOpenCitiesCouncil(config: OpenCitiesConfig): CouncilAdapte
       });
       const matches = items.filter((item) => matchesHouseNumber(item.AddressSingleLine, parts));
       // The last query drops the suburb in case the user named the wrong one.
-      // Only trust it if every hit is in the same suburb; otherwise suggest.
-      const suburbs = new Set(matches.map((m) => m.AddressSingleLine.split(',')[1]?.trim()));
-      if (matches[0] && (query.endsWith(` ${suburb}`) || suburbs.size === 1)) return matches[0];
+      // Only trust it if every hit is on the same street in the same suburb; otherwise suggest.
+      // (Compared without the unit and house number, because councils write the
+      // rest differently: "Main St, UPWEY 3158" or "Main Street UPWEY VIC 3158".)
+      const places = new Set(matches.map((m) => restOfAddress(m.AddressSingleLine)));
+      if (matches[0] && (query.endsWith(` ${suburb}`) || places.size === 1)) return matches[0];
     }
     throw addressNotFound(`${info.name} could not find "${address.input}"`, {
       suggestions: [...suggestions].slice(0, 5),
@@ -122,10 +131,10 @@ export function createOpenCitiesCouncil(config: OpenCitiesConfig): CouncilAdapte
   return {
     ...info,
     platform: 'opencities',
-    async getSchedule(address, { http }) {
+    async getSchedule(address, { http, today }) {
       const property = await findProperty(http, address);
       const { html, url } = await fetchWasteServices(http, property.Id);
-      const services = parseOpenCitiesWasteServices(html, { binTypes, colours });
+      const services = parseOpenCitiesWasteServices(html, { binTypes, colours, today });
       if (!services.length) {
         throw parseError(`No bin services found for ${property.AddressSingleLine}`, { url });
       }
@@ -142,7 +151,12 @@ export function createOpenCitiesCouncil(config: OpenCitiesConfig): CouncilAdapte
 /** Parse the OpenCities waste-services widget HTML. Exported for tests. */
 export function parseOpenCitiesWasteServices(
   html: string,
-  options: { binTypes?: Record<string, BinType>; colours?: Partial<Record<BinType, string>> } = {},
+  options: {
+    binTypes?: Record<string, BinType>;
+    colours?: Partial<Record<BinType, string>>;
+    /** Needed for councils that name a weekday ("Thursday") instead of giving a date. */
+    today?: LocalDate;
+  } = {},
 ): BinService[] {
   const $ = cheerio.load(html);
   const services: BinService[] = [];
@@ -151,12 +165,19 @@ export function parseOpenCitiesWasteServices(
     const $el = $(el);
     const name = $el.find('h3').first().text().trim();
     const dateText = $el.find('.next-service').first().text().trim();
-    const next = parseAustralianDate(dateText);
+    const frequencyText = $el.find('.subheading').first().text() || $el.find('.note').text();
+    const type = classifyBin(name, options.binTypes);
+    // The widget also lists things that aren't bins (street sweeping, links to calendars).
+    if (type === 'other') return;
+    // Some councils put the cycle in the name ("Weekly red-lidded garbage bin collection").
+    // Bulky collections are one-off dates, whatever their description says about weeks.
+    const everyDays =
+      type === 'bulky'
+        ? undefined
+        : (parseFrequency(frequencyText) ?? parseFrequency(name) ?? parseFrequency(dateText));
+    const next = parseAustralianDate(dateText) ?? nextWeekday(dateText, everyDays, options.today);
     if (!name || !next) return;
 
-    const frequencyText = $el.find('.subheading').first().text() || $el.find('.note').text();
-    const everyDays = parseFrequency(frequencyText);
-    const type = classifyBin(name, options.binTypes);
     const colour = options.colours?.[type] ?? DEFAULT_COLOURS[type];
 
     services.push({
@@ -170,6 +191,26 @@ export function parseOpenCitiesWasteServices(
   });
 
   return services;
+}
+
+/**
+ * Some councils show only "Thursday" or "Every Tuesday". For a weekly bin that
+ * pins the next date down; for a fortnightly one it doesn't say which week, so
+ * it is left out.
+ */
+function nextWeekday(text: string, everyDays?: number, today?: LocalDate): LocalDate | undefined {
+  const [, every, name] = /^(every\s+)?([a-z]+day)$/i.exec(text) ?? [];
+  if (!today || !name || !(every || everyDays === 7)) return undefined;
+  const day = parseWeekday(name);
+  return day === undefined ? undefined : addDays(today, (day - weekdayIndex(today) + 7) % 7);
+}
+
+/** An address line without its leading unit and house number, for comparing places. */
+function restOfAddress(line: string): string {
+  return line
+    .replace(/^\s*(unit\s+)?[\d/\-a-z]*\d[\d/\-a-z]*\s+/i, '')
+    .replace(/\s+/g, ' ')
+    .toUpperCase();
 }
 
 function unique(values: Array<string | undefined | false>): string[] {

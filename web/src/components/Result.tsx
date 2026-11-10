@@ -1,9 +1,9 @@
 import { Anchor, Badge, Group, Paper, Stack, Text, Title, Tooltip } from '@mantine/core';
 import { motion } from 'motion/react';
+import { councilPath } from '../../../src/councils/names.js';
 import type { Bin, BinDaysResult, CollectionDay, ServiceSummary } from '../api.js';
 import { daysUntil, formatDate, relativeDay } from '../lib.js';
 import { BinIcon } from './BinIcon.js';
-import { Outbound } from './Outbound.js';
 
 const PROJECTED = 'Estimated from the regular cycle. Public holidays can shift it.';
 
@@ -17,7 +17,13 @@ const rise = {
   shown: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24 } },
 } as const;
 
-export function Result({ result }: { result: BinDaysResult }) {
+interface ResultProps {
+  result: BinDaysResult;
+  /** The council whose page this is, if any, so the result doesn't link to the page it is on. */
+  pageCouncil?: string | undefined;
+}
+
+export function Result({ result, pageCouncil }: ResultProps) {
   const { next, today, council, address } = result;
   const later = result.days.filter((day) => day.date !== next?.date);
   const estimated = result.days.some((day) => day.bins.some((b) => b.confidence === 'projected'));
@@ -33,12 +39,12 @@ export function Result({ result }: { result: BinDaysResult }) {
         <motion.div variants={rise}>
           <Text c="dimmed" size="sm">
             {address.matched} ·{' '}
-            {council.website ? (
-              <Outbound href={council.website} inherit>
-                {council.name}
-              </Outbound>
-            ) : (
+            {council.id === pageCouncil ? (
               council.name
+            ) : (
+              <Anchor href={councilPath(council)} inherit>
+                {council.name}
+              </Anchor>
             )}
             {' · '}
             <Anchor href="#coverage" inherit>

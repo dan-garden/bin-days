@@ -19,6 +19,9 @@ const app: Hono = createApp(service);
 
 // Vercel's CDN serves `public/` by exact path only, so `/` and the council
 // pages reach the app, which serves the UI with each page's content in it.
-addSiteRoutes(app, service.registry, { siteUrl: process.env.SITE_URL });
+addSiteRoutes(app, service.registry, {
+  siteUrl: process.env.SITE_URL,
+  coverage: () => service.coverage(),
+});
 
 export default app;

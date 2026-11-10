@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 72">
-  <title>Bin Day</title>
+  <title>Bin Days</title>
   <circle cx="45" cy="62" r="6" fill="#1b1f1d" />
   <path d="M15 25H49L45.5 60Q45.2 64 41.5 64H22.5Q18.8 64 18.5 60Z" fill="#2f3b36" />
   <path d="M11 27V22Q11 16 17 16H47Q53 16 53 22V27Z" fill="#e03131" />

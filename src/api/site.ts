@@ -1,36 +1,57 @@
 import type { Context, Hono } from 'hono';
-import { councilPath, STATE_NAMES, shortCouncilName } from '../councils/names.js';
+import { AUSTRALIAN_STATES, type AustralianState } from '../core/types.js';
+import {
+  councilPath,
+  STATE_NAMES,
+  shortCouncilName,
+  sourceDescription,
+  statePath,
+} from '../councils/names.js';
 import type { CouncilRegistry } from '../councils/registry.js';
 import type { CouncilInfo } from '../councils/types.js';
+import { boundsOf, centreOf, distanceKm } from '../geo/bounds.js';
+import type { Coverage } from '../service.js';
 
 /**
- * The public website around the API: the home page, one landing page per
- * council, and the files search engines and language models look for
+ * The public website around the API: the home page, a page per state, a page
+ * per council, and the files search engines and language models look for
  * (`/sitemap.xml`, `/robots.txt`, `/llms.txt`).
  *
  * The UI is a client-rendered app, which crawlers and language models read
  * poorly. So each page is the UI's HTML with real content put into it on the
  * server: its own title and description, structured data, and plain HTML that
- * says what the page is. Everything here is generated from the council
- * registry, so adding a council adds its page and its sitemap entry.
+ * says what the page is and links to the pages around it. Everything here is
+ * generated from the council registry, so adding a council adds its page, its
+ * links and its sitemap entry.
  */
 export interface SiteOptions {
   /** The site's canonical origin, e.g. `https://binday.example`. Defaults to the request's own. */
   siteUrl?: string | undefined;
   /** Load the built UI's HTML. Defaults to fetching this deployment's `/index.html`. */
   loadShell?: (origin: string) => Promise<string | undefined>;
+  /** Where the councils are, for working out each one's neighbours. Without it, pages list none. */
+  coverage?: () => Promise<Coverage>;
 }
 
-const SITE_NAME = 'Bin Day';
+const SITE_NAME = 'Bin Days';
 const HEAD = /<!--seo:head-->[\s\S]*?<!--\/seo:head-->/;
 const BODY = '<!--seo:body-->';
+/** How many neighbouring councils a council's page links to. */
+const NEARBY = 6;
 
 /** Used if the built UI can't be loaded; the page still reads fine without it. */
 const BARE_SHELL = `<!doctype html><html lang="en-AU"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><!--seo:head--><!--/seo:head--></head><body><div id="root">${BODY}</div></body></html>`;
 
+type CouncilLink = Pick<CouncilInfo, 'id' | 'name' | 'state'>;
+
 /** What the UI needs to know about the page it was served on. */
 export interface PageData {
-  council?: Pick<CouncilInfo, 'id' | 'name' | 'state' | 'website'>;
+  /** Set on a state's page. */
+  state?: AustralianState;
+  /** Set on a council's page. */
+  council?: Pick<CouncilInfo, 'id' | 'name' | 'state' | 'website' | 'platform'>;
+  /** The closest other councils, nearest first. */
+  nearby?: CouncilLink[];
 }
 
 const escapeHtml = (text: string) =>
@@ -39,21 +60,63 @@ const escapeHtml = (text: string) =>
 /** JSON that is safe inside a `<script>` element. */
 const scriptJson = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
 
+const link = (href: string, text: string) =>
+  `<a href="${escapeHtml(href)}">${escapeHtml(text)}</a>`;
+const councilLinks = (councils: CouncilLink[]) =>
+  `<ul>${councils.map((c) => `<li>${link(councilPath(c), `${shortCouncilName(c.name)} bin day`)}</li>`).join('')}</ul>`;
+
 interface Page {
   path: string;
   title: string;
   description: string;
-  /** schema.org descriptions of the page. */
-  structuredData: object[];
+  /** The trail from the home page down to this page, for the breadcrumb. */
+  trail: Array<{ name: string; path: string }>;
   data: PageData;
   /** Plain HTML shown until the UI starts, and all that non-JavaScript readers get. */
-  body: string;
+  body: string[];
 }
 
 function renderPage(shell: string, origin: string, page: Page): string {
   const url = origin + page.path;
   const meta = (attribute: string, name: string, content: string) =>
     `<meta ${attribute}="${name}" content="${escapeHtml(content)}" />`;
+  const structuredData: object[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: SITE_NAME,
+      url,
+      applicationCategory: 'UtilitiesApplication',
+      operatingSystem: 'Any',
+      description: page.description,
+      areaServed: page.data.council
+        ? {
+            '@type': 'AdministrativeArea',
+            name: `${page.data.council.name}, ${STATE_NAMES[page.data.council.state]}`,
+          }
+        : { '@type': 'Country', name: 'Australia' },
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'AUD' },
+    },
+  ];
+  if (page.trail.length > 1) {
+    structuredData.push({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: page.trail.map((step, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: step.name,
+        item: origin + step.path,
+      })),
+    });
+  } else {
+    structuredData.push({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: `${origin}/`,
+    });
+  }
   const head = [
     `<title>${escapeHtml(page.title)}</title>`,
     meta('name', 'description', page.description),
@@ -65,115 +128,144 @@ function renderPage(shell: string, origin: string, page: Page): string {
     meta('property', 'og:url', url),
     meta('property', 'og:locale', 'en_AU'),
     meta('name', 'twitter:card', 'summary'),
-    ...page.structuredData.map(
+    ...structuredData.map(
       (item) => `<script type="application/ld+json">${scriptJson(item)}</script>`,
     ),
     `<script id="page-data" type="application/json">${scriptJson(page.data)}</script>`,
   ].join('\n    ');
+  const trail =
+    page.trail.length > 1
+      ? `<nav>${page.trail
+          .map((step, index) =>
+            index < page.trail.length - 1 ? link(step.path, step.name) : escapeHtml(step.name),
+          )
+          .join(' › ')}</nav>`
+      : '';
   return shell
     .replace(HEAD, () => head)
-    .replace(BODY, () => `<div class="seo-fallback">${page.body}</div>`);
+    .replace(BODY, () => `<div class="seo-fallback">${[trail, ...page.body].join('\n')}</div>`);
 }
 
-function application(origin: string) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: SITE_NAME,
-    url: `${origin}/`,
-    applicationCategory: 'UtilitiesApplication',
-    operatingSystem: 'Any',
-    description: 'Shows which bins go out and when, for an Australian street address.',
-    areaServed: { '@type': 'Country', name: 'Australia' },
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'AUD' },
-  };
+const HOME = { name: SITE_NAME, path: '/' };
+
+/** States that have at least one council, biggest first, each with its councils. */
+function byState(councils: CouncilInfo[]): Array<[AustralianState, CouncilInfo[]]> {
+  return AUSTRALIAN_STATES.map((state): [AustralianState, CouncilInfo[]] => [
+    state,
+    councils.filter((c) => c.state === state),
+  ])
+    .filter(([, list]) => list.length > 0)
+    .sort((a, b) => b[1].length - a[1].length);
 }
 
-function byState(councils: CouncilInfo[]): Array<[string, CouncilInfo[]]> {
-  const groups = new Map<string, CouncilInfo[]>();
-  for (const council of councils) {
-    const state = STATE_NAMES[council.state];
-    groups.set(state, [...(groups.get(state) ?? []), council]);
-  }
-  return [...groups].sort((a, b) => b[1].length - a[1].length);
-}
-
-function homePage(origin: string, councils: CouncilInfo[]): Page {
+function homePage(councils: CouncilInfo[]): Page {
   const places = councils.map((c) => shortCouncilName(c.name));
-  const sample = ['Brisbane', 'Gold Coast', 'Inner West', 'Ballarat'].filter((p) =>
+  const sample = ['Brisbane', 'Adelaide', 'Canberra', 'Gold Coast', 'Hobart'].filter((p) =>
     places.includes(p),
   );
   const including = sample.length ? `, including ${sample.join(', ')}` : '';
   const description = `Type your address to see your next bin collection day and which bins go out: general waste, recycling or green waste. Free for ${councils.length} Australian councils${including}.`;
   return {
     path: '/',
-    title: 'Bin Day: which bins go out this week?',
+    title: `${SITE_NAME}: which bins go out this week?`,
     description,
-    structuredData: [
-      { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: `${origin}/` },
-      application(origin),
-    ],
+    trail: [HOME],
     data: {},
     body: [
       '<h1>Which bins go out?</h1>',
       `<p>${escapeHtml(description)}</p>`,
       '<h2>Supported councils</h2>',
       ...byState(councils).flatMap(([state, list]) => [
-        `<h3>${escapeHtml(state)}</h3>`,
-        `<ul>${list
-          .map(
-            (c) =>
-              `<li><a href="${councilPath(c)}">${escapeHtml(shortCouncilName(c.name))} bin day</a></li>`,
-          )
-          .join('')}</ul>`,
+        `<h3>${link(statePath(state), `${STATE_NAMES[state]} bin days`)}</h3>`,
+        councilLinks(list),
       ]),
       '<p>Developers and AI assistants: see <a href="/llms.txt">llms.txt</a> and the <a href="/docs">API documentation</a>.</p>',
-    ].join('\n'),
+    ],
   };
 }
 
-function councilPage(origin: string, council: CouncilInfo): Page {
+function statePage(state: AustralianState, councils: CouncilInfo[]): Page {
+  const name = STATE_NAMES[state];
+  const inState = councils.filter((c) => c.state === state);
+  const description = `Find your bin collection day in ${name}. Pick your council or type your address to see which bins go out this week, for ${inState.length} ${name} council${inState.length === 1 ? '' : 's'}.`;
+  return {
+    path: statePath(state),
+    title: `${name} bin days: find your council's collection day`,
+    description,
+    trail: [HOME, { name, path: statePath(state) }],
+    data: { state },
+    body: [
+      `<h1>${escapeHtml(name)} bin days</h1>`,
+      `<p>${escapeHtml(description)}</p>`,
+      `<h2>Councils in ${escapeHtml(name)}</h2>`,
+      councilLinks(inState),
+      `<p>${link('/', 'Bin days in other states')}</p>`,
+    ],
+  };
+}
+
+function councilPage(council: CouncilInfo, nearby: CouncilLink[]): Page {
   const place = shortCouncilName(council.name);
   const state = STATE_NAMES[council.state];
   const description = `Find your next bin day in ${place}, ${state}. Type your address to see when ${council.name} collects, and whether it's general waste, recycling or green waste this week.`;
-  const { id, name, website } = council;
+  const { id, name, website, platform } = council;
   return {
     path: councilPath(council),
     title: `${place} bin day: which bins go out this week?`,
     description,
-    structuredData: [
-      {
-        ...application(origin),
-        url: origin + councilPath(council),
-        areaServed: { '@type': 'AdministrativeArea', name: `${council.name}, ${state}` },
-      },
-      {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: SITE_NAME, item: `${origin}/` },
-          { '@type': 'ListItem', position: 2, name: `${place} bin day` },
-        ],
-      },
+    trail: [
+      HOME,
+      { name: state, path: statePath(council.state) },
+      { name: `${place} bin day`, path: councilPath(council) },
     ],
-    data: { council: { id, name, state: council.state, ...(website ? { website } : {}) } },
+    data: {
+      council: {
+        id,
+        name,
+        state: council.state,
+        ...(website ? { website } : {}),
+        ...(platform ? { platform } : {}),
+      },
+      nearby,
+    },
     body: [
       `<h1>${escapeHtml(place)} bin day</h1>`,
       `<p>${escapeHtml(description)}</p>`,
       '<h2>How it works</h2>',
-      `<ol><li>Type your street address in ${escapeHtml(place)}.</li><li>We look your property up in ${escapeHtml(council.name)}'s own collection calendar.</li><li>You see your next collection day and which bins to put out, plus the weeks after.</li></ol>`,
-      website
-        ? `<p>The dates come from <a href="${escapeHtml(website)}">${escapeHtml(council.name)}</a>.</p>`
-        : '',
-      '<p><a href="/">Bin days for other Australian councils</a></p>',
-    ].join('\n'),
+      `<ol><li>Type your street address in ${escapeHtml(place)}.</li><li>We look your property up with ${escapeHtml(council.name)}.</li><li>You see your next collection day and which bins to put out, plus the weeks after.</li></ol>`,
+      `<p>The dates come from ${escapeHtml(sourceDescription(council))}.${website ? ` ${link(website, `${council.name} website`)}` : ''}</p>`,
+      ...(nearby.length
+        ? [`<h2>Councils near ${escapeHtml(place)}</h2>`, councilLinks(nearby)]
+        : []),
+      `<p>${link(statePath(council.state), `All ${state} councils`)}</p>`,
+    ],
   };
 }
 
+/** The closest other councils to one council, by the middle of each council's area. */
+function nearestCouncils(coverage: Coverage, council: CouncilInfo): CouncilLink[] {
+  const centres = new Map<string, { link: CouncilLink; centre: [number, number] }>();
+  for (const feature of coverage.features) {
+    const { council: id, name, state } = feature.properties;
+    const bounds = boundsOf(feature.geometry.coordinates);
+    if (bounds) centres.set(id, { link: { id, name, state }, centre: centreOf(bounds) });
+  }
+  const here = centres.get(council.id)?.centre;
+  if (!here) return [];
+  return [...centres.values()]
+    .filter((other) => other.link.id !== council.id)
+    .sort((a, b) => distanceKm(here, a.centre) - distanceKm(here, b.centre))
+    .slice(0, NEARBY)
+    .map((other) => other.link);
+}
+
 function sitemap(origin: string, councils: CouncilInfo[]): string {
-  const urls = ['/', ...councils.map(councilPath)].map(
-    (path) => `  <url><loc>${escapeHtml(origin + path)}</loc></url>`,
-  );
+  const paths = [
+    '/',
+    ...byState(councils).map(([state]) => statePath(state)),
+    ...councils.map(councilPath),
+  ];
+  const urls = paths.map((path) => `  <url><loc>${escapeHtml(origin + path)}</loc></url>`);
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
 }
 
@@ -196,7 +288,12 @@ Errors are JSON, \`{"error": {"code", "message"}}\`. \`ADDRESS_NOT_FOUND\` may i
 
 ## Councils
 
-${councils.map((c) => `- [${c.name} (${c.state})](${origin}${councilPath(c)})`).join('\n')}
+${byState(councils)
+  .map(
+    ([state, list]) =>
+      `### ${STATE_NAMES[state]}\n\n${list.map((c) => `- [${c.name}](${origin}${councilPath(c)})`).join('\n')}`,
+  )
+  .join('\n\n')}
 `;
 }
 
@@ -230,12 +327,25 @@ export function addSiteRoutes(
     return c.body(body, 200, { 'content-type': `${type}; charset=utf-8` });
   };
 
-  app.get('/', (c) => send(c, homePage(origin(c), registry.list())));
+  app.get('/', (c) => send(c, homePage(registry.list())));
 
-  app.get('/bin-day/:state/:council', (c) => {
+  app.get('/bin-day/:state', (c) => {
+    const state = AUSTRALIAN_STATES.find(
+      (s) => s.toLowerCase() === c.req.param('state').toLowerCase(),
+    );
+    const councils = registry.list();
+    return state && councils.some((council) => council.state === state)
+      ? send(c, statePage(state, councils))
+      : c.notFound();
+  });
+
+  app.get('/bin-day/:state/:council', async (c) => {
     const id = `${c.req.param('state')}/${c.req.param('council')}`.toLowerCase();
     const council = registry.list().find((item) => item.id === id);
-    return council ? send(c, councilPage(origin(c), council)) : c.notFound();
+    if (!council) return c.notFound();
+    // The page is worth serving even if the boundary service is down; it just lists no neighbours.
+    const coverage = await options.coverage?.().catch(() => undefined);
+    return send(c, councilPage(council, coverage ? nearestCouncils(coverage, council) : []));
   });
 
   app.get('/sitemap.xml', (c) => text(c, sitemap(origin(c), registry.list()), 'application/xml'));

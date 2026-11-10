@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  boundsOf,
-  daysUntil,
-  formatDate,
-  groupByState,
-  lidPaint,
-  relativeDay,
-} from '../../web/src/lib.js';
+import { boundsOf, centreOf, distanceKm } from '../../src/geo/bounds.js';
+import { daysUntil, formatDate, groupByState, lidPaint, relativeDay } from '../../web/src/lib.js';
 
 describe('web UI helpers', () => {
   it('counts and words the days to a collection', () => {
@@ -64,5 +58,8 @@ describe('web UI helpers', () => {
       ]),
     ).toEqual([150, -34, 154, -27]);
     expect(boundsOf([])).toBeUndefined();
+    expect(centreOf([150, -34, 154, -27])).toEqual([152, -30.5]);
+    // Brisbane to the Gold Coast is about 70 km.
+    expect(Math.round(distanceKm([153.02, -27.47], [153.4, -28.0]))).toBe(70);
   });
 });

@@ -3,7 +3,7 @@ import { matchesHouseNumber, parseAustralianAddress } from '../../src/core/addre
 import { BinDaysError } from '../../src/core/errors.js';
 import { goldCoast } from '../../src/councils/qld/gold-coast.js';
 import { parseOpenCitiesWasteServices } from '../../src/platforms/opencities.js';
-import { ctx, fakeHttp, fixture, json } from '../helpers.js';
+import { ctx, d, fakeHttp, fixture, json } from '../helpers.js';
 
 const wasteServices = JSON.parse(fixture('opencities-gold-coast-wasteservices.json'));
 const GEO_ID = '00000000-0000-4000-8000-000000000012';
@@ -34,8 +34,32 @@ describe('OpenCities waste-services parser', () => {
     ]);
   });
 
+  it('reads the cycle from the name, skips non-bins, and never projects bulky collections', () => {
+    const entry = (name: string, date: string, note = '') =>
+      `<div class="waste-services-result"><h3>${name}</h3><div class="note">${note}</div>
+       <div class="next-service">${date}</div></div>`;
+    const html = [
+      entry('Weekly green-lidded vegetation bin collection', 'Thu 12/11/2026'),
+      entry('Spring bulky waste collection', '07/02/2027', 'Put items out the week before.'),
+      entry('Scheduled household clean-up', '01/03/2027'),
+      entry('Street sweeping service', 'Tue 17/11/2026'),
+      entry('Garbage', 'Thursday', 'Collected weekly.'),
+      entry('Recycling', 'Thursday', 'Collected fortnightly.'),
+      entry('Landfill', 'Every Tuesday'),
+    ].join('');
+    const services = parseOpenCitiesWasteServices(html, { today: d('2026-11-10') });
+    expect(services.map((s) => [s.type, s.recurrence])).toEqual([
+      ['organics', { kind: 'interval', everyDays: 7, anchor: '2026-11-12' }],
+      ['bulky', { kind: 'dates', dates: ['2027-02-07'] }],
+      ['bulky', { kind: 'dates', dates: ['2027-03-01'] }],
+      // A weekday alone pins down a weekly bin; a fortnightly one is left out.
+      ['general', { kind: 'interval', everyDays: 7, anchor: '2026-11-12' }],
+      ['general', { kind: 'interval', everyDays: 7, anchor: '2026-11-10' }],
+    ]);
+  });
+
   it('falls back to a single date when no frequency is given', () => {
-    const html = `<div class="waste-services-result"><h3>Bulky goods</h3>
+    const html = `<div class="waste-services-result"><h3>Glass</h3>
       <div class="next-service">Mon 7/12/2026</div></div>`;
     expect(parseOpenCitiesWasteServices(html)[0]?.recurrence).toEqual({
       kind: 'dates',

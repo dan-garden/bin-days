@@ -12,8 +12,8 @@ import {
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
+import { type Bounds, boundsOf, centreOf } from '../../../src/geo/bounds.js';
 import type { Coverage } from '../api.js';
-import { type Bounds, boundsOf } from '../lib.js';
 
 // The bundler renames the worker file, so the library can't find it by itself.
 setWorkerUrl(workerUrl);
@@ -30,8 +30,10 @@ const PADDING = { top: 40, right: 56, bottom: 76, left: 40 };
 
 export interface CoverageMapProps {
   coverage: Coverage;
-  /** Council id to highlight and zoom to. */
-  selected?: string | undefined;
+  /** Council ids to frame: a state's councils, or one council. Leave out to show them all. */
+  frame?: readonly string[] | undefined;
+  /** Council id to outline. */
+  highlight?: string | undefined;
   onSelect: (council: string) => void;
   /** The address that was looked up. */
   pin?: { latitude: number; longitude: number } | undefined;
@@ -42,22 +44,34 @@ const box = (bounds: Bounds): LngLatBoundsLike => [
   [bounds[2], bounds[3]],
 ];
 
-export default function CoverageMap({ coverage, selected, onSelect, pin }: CoverageMapProps) {
+/** The bounding box of the framed councils, or of every council. */
+function frameBounds(coverage: Coverage, frame?: readonly string[]): Bounds | undefined {
+  const features = frame
+    ? coverage.features.filter((f) => frame.includes(f.properties.council))
+    : coverage.features;
+  return boundsOf(features.map((f) => f.geometry.coordinates));
+}
+
+export default function CoverageMap({
+  coverage,
+  frame,
+  highlight,
+  onSelect,
+  pin,
+}: CoverageMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibre>(null);
   // Read the scheme straight away, so the map doesn't start light and then reload dark.
   const scheme = useComputedColorScheme('light', { getInitialValueInEffect: false });
   // The map outlives renders, so its event handlers read the latest props from here.
-  const latest = useRef({ coverage, selected, onSelect });
-  latest.current = { coverage, selected, onSelect };
+  const latest = useRef({ coverage, frame, highlight, onSelect });
+  latest.current = { coverage, frame, highlight, onSelect };
 
   // Create the map once.
   // biome-ignore lint/correctness/useExhaustiveDependencies: later scheme changes are handled by the effect below.
   useEffect(() => {
     if (!container.current) return;
-    const everything = boundsOf(
-      latest.current.coverage.features.map((f) => f.geometry.coordinates),
-    );
+    const everything = frameBounds(latest.current.coverage, latest.current.frame);
     const instance = new MapLibre({
       container: container.current,
       style: STYLES[scheme],
@@ -76,7 +90,7 @@ export default function CoverageMap({ coverage, selected, onSelect, pin }: Cover
 
     // Runs for the first style and again whenever the style is swapped (light/dark).
     instance.on('style.load', () => {
-      const { coverage, selected } = latest.current;
+      const { coverage, highlight } = latest.current;
       // Our API types geometry loosely; the map only needs it to be GeoJSON, which it is.
       const source = { type: 'geojson', data: coverage } as Parameters<MapLibre['addSource']>[1];
       instance.addSource('coverage', source);
@@ -88,7 +102,7 @@ export default function CoverageMap({ coverage, selected, onSelect, pin }: Cover
           features: coverage.features.flatMap((feature) => {
             const b = boundsOf(feature.geometry.coordinates);
             if (!b) return [];
-            const coordinates = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
+            const coordinates = centreOf(b);
             return [
               {
                 type: 'Feature' as const,
@@ -111,12 +125,12 @@ export default function CoverageMap({ coverage, selected, onSelect, pin }: Cover
         source: 'coverage',
         paint: { 'line-color': GREEN, 'line-width': 1.4 },
       });
-      // The selected council gets a bold outline rather than a heavy fill, so the streets stay readable.
+      // The highlighted council gets a bold outline rather than a heavy fill, so the streets stay readable.
       instance.addLayer({
         id: 'coverage-selected',
         type: 'line',
         source: 'coverage',
-        filter: ['==', ['get', 'council'], selected ?? ''],
+        filter: ['==', ['get', 'council'], highlight ?? ''],
         paint: { 'line-color': '#fcc419', 'line-width': 3.5 },
       });
       instance.addLayer({
@@ -162,24 +176,25 @@ export default function CoverageMap({ coverage, selected, onSelect, pin }: Cover
     map.current?.setStyle(STYLES[scheme]);
   }, [scheme]);
 
-  // Highlight the selected council and bring it into view. (If the style is
-  // still loading, its `style.load` handler applies the highlight instead.)
+  // Outline the highlighted council. (If the style is still loading, its
+  // `style.load` handler applies the outline instead.)
   useEffect(() => {
     const instance = map.current;
-    if (!instance) return;
-    if (instance.getLayer('coverage-selected')) {
-      instance.setFilter('coverage-selected', ['==', ['get', 'council'], selected ?? '']);
+    if (instance?.getLayer('coverage-selected')) {
+      instance.setFilter('coverage-selected', ['==', ['get', 'council'], highlight ?? '']);
     }
-    const area = boundsOf(
-      coverage.features
-        .filter((f) => f.properties.council === selected)
-        .map((f) => f.geometry.coordinates),
-    );
-    if (area) instance.fitBounds(box(area), { padding: PADDING, maxZoom: 11, duration: 1400 });
-  }, [selected, coverage]);
+  }, [highlight]);
+
+  // Bring the framed councils into view when the frame changes.
+  const framed = frame?.join(',');
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `framed` stands in for `frame`, which is a new array each render.
+  useEffect(() => {
+    const area = frameBounds(coverage, frame);
+    if (area) map.current?.fitBounds(box(area), { padding: PADDING, maxZoom: 11, duration: 1200 });
+  }, [framed, coverage]);
 
   // Drop a pin on the looked-up address and fly there. Runs after the effect
-  // above, so a lookup lands on the address rather than the whole council.
+  // above, so a lookup lands on the address rather than the whole frame.
   useEffect(() => {
     const instance = map.current;
     if (!instance || !pin) return;

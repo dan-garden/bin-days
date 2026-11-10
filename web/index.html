@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- The server replaces this block with each page's own title, description and structured data (src/api/site.ts). -->
     <!--seo:head-->
-    <title>Bin Day: which bins go out this week?</title>
+    <title>Bin Days: which bins go out this week?</title>
     <meta
       name="description"
       content="Type your address to see your next bin collection day and which bins go out, for councils across Australia."
@@ -23,12 +23,18 @@
       }
     </style>
     <script>
-      // Set the colour scheme before first paint so dark mode doesn't flash white.
-      document.documentElement.dataset.mantineColorScheme = matchMedia(
-        '(prefers-color-scheme: dark)',
-      ).matches
-        ? 'dark'
-        : 'light';
+      // Set the colour scheme before first paint so dark mode doesn't flash white: the
+      // choice made with the theme button if there is one, else the system setting.
+      (() => {
+        let chosen;
+        try {
+          chosen = localStorage.getItem('mantine-color-scheme-value');
+        } catch {}
+        const dark =
+          chosen === 'dark' ||
+          (chosen !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.mantineColorScheme = dark ? 'dark' : 'light';
+      })();
     </script>
   </head>
   <body>

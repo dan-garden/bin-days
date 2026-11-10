@@ -1,4 +1,4 @@
-# Bin Day
+# Bin Days
 
 Which bins go out, and when, for an Australian street address.
 
@@ -62,7 +62,7 @@ The full reference, with every field and error, is the interactive documentation
 
 ## Where it works
 
-37 councils across New South Wales, Victoria and Queensland. See [PROGRESS.md](PROGRESS.md) for the list and what is planned next.
+138 councils so far, across South Australia, New South Wales, Victoria, Queensland, the ACT, Tasmania and Western Australia. See [PROGRESS.md](PROGRESS.md) for the list and what is planned next.
 
 ## Project layout
 

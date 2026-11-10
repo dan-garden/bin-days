@@ -63,7 +63,9 @@ export function createApp(service: BinDaysService): Hono {
   /** GET /v1/coverage is a GeoJSON map of the areas the supported councils cover. */
   app.get('/v1/coverage', async (c) => {
     const coverage = await service.coverage();
-    c.header('cache-control', 'public, max-age=86400, s-maxage=86400');
+    // A CDN can keep this for a day (a deploy clears it). Browsers check hourly, so a newly
+    // added council shows up on the map without waiting a day.
+    c.header('cache-control', 'public, max-age=3600, s-maxage=86400');
     return c.json(coverage);
   });
 

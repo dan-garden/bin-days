@@ -1,6 +1,7 @@
 import {
   Alert,
   Anchor,
+  Breadcrumbs,
   Button,
   Container,
   Group,
@@ -11,7 +12,7 @@ import {
 } from '@mantine/core';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { shortCouncilName } from '../../src/councils/names.js';
+import { STATE_NAMES, shortCouncilName, statePath } from '../../src/councils/names.js';
 import {
   ApiError,
   type BinDaysResult,
@@ -22,9 +23,12 @@ import {
 } from './api.js';
 import { AddressForm } from './components/AddressForm.js';
 import { BinIcon } from './components/BinIcon.js';
-import { Coverage } from './components/Coverage.js';
+import { CouncilAbout } from './components/CouncilAbout.js';
+import { HomeDirectory } from './components/HomeDirectory.js';
 import { Outbound } from './components/Outbound.js';
 import { Result } from './components/Result.js';
+import { StateDirectory } from './components/StateDirectory.js';
+import { ThemeToggle } from './components/ThemeToggle.js';
 
 /** The last address submitted, so a returning visitor sees their bins straight away. */
 const REMEMBERED = 'bin-days:address';
@@ -48,6 +52,31 @@ function remember(address: string) {
 /** Set when this is a council's landing page, e.g. `/bin-day/qld/brisbane`. */
 const page = pageData();
 
+/** The page's heading, and the trail back to the home page, for each kind of page. */
+const isHome = !page.council && !page.state;
+const heading = page.council
+  ? {
+      title: `${shortCouncilName(page.council.name)} bin day`,
+      lede: `Type your address to see when ${page.council.name} collects, and which bins go out.`,
+    }
+  : page.state
+    ? {
+        title: `${STATE_NAMES[page.state]} bin days`,
+        lede: 'Type your address, or pick your council below, to see which bins go out.',
+      }
+    : {
+        title: 'Which bins go out?',
+        lede: "Type your address and we'll check your council's collection calendar.",
+      };
+const trail: Array<{ name: string; href?: string }> = page.council
+  ? [
+      { name: STATE_NAMES[page.council.state], href: statePath(page.council.state) },
+      { name: shortCouncilName(page.council.name) },
+    ]
+  : page.state
+    ? [{ name: STATE_NAMES[page.state] }]
+    : [];
+
 type Lookup =
   | { status: 'idle' }
   | { status: 'loading' }
@@ -58,8 +87,6 @@ export function App() {
   const [address, setAddress] = useState(remembered);
   const [lookup, setLookup] = useState<Lookup>({ status: 'idle' });
   const [councils, setCouncils] = useState<CouncilInfo[]>([]);
-  // On a council's landing page, start with that council picked out.
-  const [selected, setSelected] = useState(page.council?.id);
   const request = useRef<AbortController>(null);
 
   const find = useCallback(async (submitted: string) => {
@@ -73,7 +100,6 @@ export function App() {
     try {
       const result = await getCollections(submitted, controller.signal);
       setLookup({ status: 'done', result });
-      setSelected(result.council.id);
     } catch (error) {
       if (controller.signal.aborted) return;
       const failure =
@@ -96,6 +122,8 @@ export function App() {
   }, []);
 
   const located = lookup.status === 'done' ? lookup.result.address : undefined;
+  /** The council the looked-up address turned out to be in. */
+  const found = lookup.status === 'done' ? lookup.result.council.id : undefined;
   const pin = useMemo(
     () =>
       located?.latitude != null && located.longitude != null
@@ -113,12 +141,12 @@ export function App() {
             <Group gap={8}>
               <BinIcon type="general" size={28} />
               <Text fw={700} size="lg">
-                Bin Day
+                Bin Days
               </Text>
             </Group>
           </Anchor>
-          <Group gap="lg">
-            <Anchor href="#coverage" c="inherit" size="sm">
+          <Group gap="md">
+            <Anchor href={isHome ? '#coverage' : '/#coverage'} c="inherit" size="sm">
               Councils
             </Anchor>
             <Outbound href="/docs" c="inherit" size="sm">
@@ -127,11 +155,30 @@ export function App() {
             <Outbound href={REPO} c="inherit" aria-label="Source code on GitHub" lh={0}>
               <GitHubIcon />
             </Outbound>
+            <ThemeToggle />
           </Group>
         </header>
 
         <main>
-          <section className="hero">
+          {trail.length > 0 && (
+            <Breadcrumbs className="trail" separator="›" aria-label="Breadcrumb">
+              <Anchor href="/" size="sm">
+                Bin Days
+              </Anchor>
+              {trail.map((step) =>
+                step.href ? (
+                  <Anchor key={step.name} href={step.href} size="sm">
+                    {step.name}
+                  </Anchor>
+                ) : (
+                  <Text key={step.name} size="sm" c="dimmed" aria-current="page">
+                    {step.name}
+                  </Text>
+                ),
+              )}
+            </Breadcrumbs>
+          )}
+          <section className={isHome ? 'hero' : 'hero hero-compact'}>
             <motion.div
               className="hero-bins"
               initial="hidden"
@@ -160,15 +207,9 @@ export function App() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
             >
-              <Title className="hero-title">
-                {page.council
-                  ? `${shortCouncilName(page.council.name)} bin day`
-                  : 'Which bins go out?'}
-              </Title>
+              <Title className="hero-title">{heading.title}</Title>
               <Text className="hero-lede" c="dimmed">
-                {page.council
-                  ? `Type your address to see when ${page.council.name} collects, and which bins go out.`
-                  : "Type your address and we'll check your council's collection calendar."}
+                {heading.lede}
               </Text>
               <AddressForm
                 address={address}
@@ -193,7 +234,11 @@ export function App() {
                 </motion.div>
               )}
               {lookup.status === 'done' && (
-                <Result key={lookup.result.address.matched} result={lookup.result} />
+                <Result
+                  key={lookup.result.address.matched}
+                  result={lookup.result}
+                  pageCouncil={page.council?.id}
+                />
               )}
               {lookup.status === 'failed' && (
                 <motion.div
@@ -208,13 +253,19 @@ export function App() {
             </AnimatePresence>
           </section>
 
-          <Coverage councils={councils} selected={selected} onSelect={setSelected} pin={pin} />
+          {page.council ? (
+            <CouncilAbout council={page.council} nearby={page.nearby ?? []} pin={pin} />
+          ) : page.state ? (
+            <StateDirectory state={page.state} councils={councils} highlight={found} pin={pin} />
+          ) : (
+            <HomeDirectory councils={councils} highlight={found} pin={pin} />
+          )}
         </main>
 
         <footer className="footer">
           <Text size="sm" c="dimmed">
             Dates come from each council's published calendar. Check with your council around public
-            holidays. Bin Day is free and open:{' '}
+            holidays. Bin Days is free and open:{' '}
             <Outbound href="/docs" inherit>
               use the API
             </Outbound>{' '}

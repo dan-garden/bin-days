@@ -26,7 +26,7 @@ Lookups are cached: geocodes for 30 days and council areas for 90 days. A proper
 
 The server also adds real content to each page before sending it (`src/api/site.ts`), so search engines and AI assistants can read the site without running JavaScript:
 
-- `/` and a landing page per council at `/bin-day/<state>/<council>`, each with its own title, description and structured data
+- `/`, a page per state at `/bin-day/<state>`, and a page per council at `/bin-day/<state>/<council>`, each with its own title, description, breadcrumb and structured data. A council's page links to its nearest neighbours
 - `/sitemap.xml` and `/robots.txt`
 - `/llms.txt`, a plain-language guide to the API for AI assistants
 

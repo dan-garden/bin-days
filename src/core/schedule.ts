@@ -91,6 +91,6 @@ export function parseFrequency(text: string): number | undefined {
   if (/fortnight|every (2|two) weeks|bi-?weekly/.test(s)) return 14;
   if (/every (3|three) weeks/.test(s)) return 21;
   if (/every (4|four) weeks|monthly/.test(s)) return 28;
-  if (/week/.test(s)) return 7;
+  if (/week|every [a-z]+day\b/.test(s)) return 7;
   return undefined;
 }

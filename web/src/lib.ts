@@ -62,23 +62,3 @@ export function groupByState<T extends { state: AustralianState; name: string }>
     ])
     .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
 }
-
-/** `[west, south, east, north]` */
-export type Bounds = [number, number, number, number];
-
-/** The bounding box of any GeoJSON coordinates, however deeply nested. */
-export function boundsOf(coordinates: unknown, bounds?: Bounds): Bounds | undefined {
-  if (!Array.isArray(coordinates)) return bounds;
-  const [x, y] = coordinates;
-  if (typeof x === 'number' && typeof y === 'number') {
-    return bounds
-      ? [
-          Math.min(bounds[0], x),
-          Math.min(bounds[1], y),
-          Math.max(bounds[2], x),
-          Math.max(bounds[3], y),
-        ]
-      : [x, y, x, y];
-  }
-  return coordinates.reduce<Bounds | undefined>((acc, part) => boundsOf(part, acc), bounds);
-}

@@ -326,33 +326,136 @@ body {
 }
 
 .council-chip {
-  font: inherit;
   font-size: 0.875rem;
   padding: 0.3rem 0.75rem;
   border-radius: 999px;
   border: 1px solid var(--card-border);
   background: var(--card);
   color: inherit;
-  cursor: pointer;
-  transition:
-    background-color 0.15s,
-    border-color 0.15s,
-    color 0.15s;
+  text-decoration: none;
+  transition: border-color 0.15s;
 }
 
-.council-chip:hover {
+.council-chip:hover,
+.state-card:hover {
   border-color: var(--mantine-primary-color-filled);
 }
 
-.council-chip:focus-visible {
+.council-chip:focus-visible,
+.state-card:focus-visible,
+.council-links a:focus-visible {
   outline: 2px solid var(--mantine-primary-color-filled);
   outline-offset: 2px;
 }
 
-.council-chip[aria-pressed="true"] {
-  background: var(--mantine-primary-color-filled);
-  border-color: var(--mantine-primary-color-filled);
-  color: #fff;
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* The home page's states: a few big targets instead of a wall of councils. */
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.6rem;
+}
+
+.state-card {
+  display: block;
+  padding: 0.8rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+
+.state-card:hover {
+  transform: translateY(-2px);
+}
+
+/* A state's councils: plain links in columns. */
+.council-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 2;
+  column-gap: 1.5rem;
+}
+
+.council-links li {
+  break-inside: avoid;
+}
+
+@media (max-width: 30em) {
+  .council-links {
+    columns: 1;
+  }
+}
+
+.council-links a {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  margin-inline: -0.5rem;
+  border-radius: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.council-links a:hover {
+  background: var(--card);
+  color: var(--mantine-color-anchor);
+}
+
+.council-links-state {
+  color: var(--mantine-color-dimmed);
+  font-size: 0.8rem;
+}
+
+.other-states {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--card-border);
+}
+
+/* A council page's short list of facts. */
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1.25rem;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--mantine-color-dimmed);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.trail {
+  margin-top: 1.25rem;
+}
+
+/* State and council pages lead with the answer, so their heading takes less room. */
+.hero-compact {
+  padding-block: clamp(1.5rem, 5vw, 3rem) 2rem;
+}
+
+.hero-compact .hero-title {
+  font-size: clamp(2.2rem, 6.5vw, 3.75rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state-card:hover {
+    transform: none;
+  }
 }
 
 /* The map library's popup, restyled to match. */

@@ -7,10 +7,10 @@ import type { BinType } from './types.js';
  */
 const RULES: Array<[RegExp, BinType]> = [
   [/\bglass\b|purple/i, 'glass'],
-  [/\bfogo\b|garden|green\s*(waste|organic|bin)|organic|yard|lime/i, 'organics'],
+  [/\bfogo\b|garden|vegetation|green[\s-]*(waste|organic|bin|lid)|organic|yard|lime/i, 'organics'],
   [/\bfood\b|caddy/i, 'food'],
   [/recycl|co-?mingled|yellow/i, 'recycling'],
-  [/bulk|large\s*item|hard\s*(waste|rubbish)|kerbside\s*collection/i, 'bulky'],
+  [/bulk|large\s*item|hard\s*(waste|rubbish)|kerbside\s*collection|clean-?\s?up/i, 'bulky'],
   [/general|rubbish|garbage|landfill|domestic\s*waste|household\s*waste|red|^waste$/i, 'general'],
 ];
 

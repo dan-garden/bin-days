@@ -1,6 +1,6 @@
 # Council candidates
 
-**Done since this was written:** every council found on waste-info.com.au (34, including Redland, Penrith, Cumberland, Wollongong and Inner West) and Liverpool. Nambucca Valley shares the Coffs Coast waste-info site, but its streets returned no properties, so it is not added.
+**Out of date in one important way:** this research marked many council websites as "blocked". Most of them answer once a request identifies itself honestly, and are now supported. See [PROGRESS.md](../PROGRESS.md) for what is covered.
 
 Where the next councils publish bin days, and how hard each looks to add. Probed 2026-11-10 with one to three plain requests per council. Nothing here has been run end to end (address in, dates out), and no terms-of-use or robots.txt review has been done.
 

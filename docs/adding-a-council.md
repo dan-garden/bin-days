@@ -14,8 +14,9 @@ Open the council's "find my bin day" page with your browser's developer tools on
 | waste-info.com.au | `https://<council>.waste-info.com.au/api/v1/streets.json` returns JSON | `src/councils/qld/redland.ts`   |
 | Granicus OpenCities | `<council site>/api/v1/myarea/search?keywords=...` returns JSON      | `src/councils/qld/gold-coast.ts` |
 | Opendatasoft      | A data portal with `/api/explore/v2.1/` addresses                      | `src/councils/qld/brisbane.ts`  |
+| My Local Services | The council is in South Australia and listed in the state's My Local Services app | `src/councils/sa/robe.ts` |
 
-Many OpenCities councils block automated requests, so check that a plain request works before starting.
+Council sites often refuse requests that look anonymous or pretend to be a browser, but answer ones that say who they are. The app sends an identifying `User-Agent` (see `BIN_DAYS_USER_AGENT`); test with that, and if a site still refuses, leave it alone rather than work around it.
 
 ## 2. Find the council's area code
 
