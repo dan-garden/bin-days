@@ -22,16 +22,32 @@
   --glow-3: rgb(224 49 49 / 0.07);
 }
 
+/* Mantine's "dimmed" grey is too faint on these backgrounds to read comfortably. */
+:root[data-mantine-color-scheme="light"] {
+  --mantine-color-dimmed: #5a655f;
+}
+
+:root[data-mantine-color-scheme="dark"] {
+  --mantine-color-dimmed: #a3aea8;
+}
+
 html {
   scroll-behavior: smooth;
+}
+
+/* Links in the server's first paint are underlined like the app's, so they don't rely on colour alone. */
+.shell-trail a,
+.seo-more a {
+  text-decoration: underline;
 }
 
 body {
   background: var(--page);
 }
 
-/* Soft lid-coloured light behind everything. */
-.backdrop {
+/* Soft lid-coloured light behind everything. On the body, so it is there from the first paint. */
+body::before {
+  content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
@@ -45,10 +61,63 @@ body {
   padding-block: 1.25rem 3rem;
 }
 
+/*
+ * The first paint. The server sends the top of each page as plain HTML using
+ * these classes and the hero's own, so it already looks like the finished page
+ * while the app loads, and nothing moves when the app takes over.
+ */
+.shell {
+  /* The same width and gutters as the app's container. */
+  max-width: 60rem;
+  margin-inline: auto;
+  padding: 1.25rem var(--mantine-spacing-md) 0;
+}
+
+.shell-topbar {
+  display: flex;
+  align-items: center;
+  height: 1.8rem;
+  padding-left: 33px;
+  font-size: var(--mantine-font-size-lg);
+  font-weight: 700;
+}
+
+.shell-topbar a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.shell-trail {
+  margin-top: 1.25rem;
+  /* The app's breadcrumb is a 16px row of 14px text. */
+  height: 16px;
+  font-size: var(--mantine-font-size-sm);
+  line-height: 16px;
+}
+
+/* Holds the place of the row of bins, which the app draws. */
+.shell-bins {
+  height: 76px;
+  margin-bottom: 1.25rem;
+}
+
+.seo-more {
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding-inline: 1rem;
+}
+
+/* The rest of the server's HTML is for readers without JavaScript; the app shows it its own way. */
+.js .seo-more {
+  display: none;
+}
+
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* Fixed, like the bins row below, so the server's first paint can match it exactly. */
+  height: 1.8rem;
 }
 
 /* Hero */
@@ -63,6 +132,7 @@ body {
   justify-content: center;
   align-items: flex-end;
   gap: 0.25rem;
+  height: 76px;
   margin-bottom: 1.25rem;
 }
 
@@ -76,6 +146,18 @@ body {
   font-size: clamp(1.05rem, 2.4vw, 1.3rem);
   margin: 0.9rem auto 1.75rem;
   max-width: 34rem;
+}
+
+/* The server-painted heading has no component styles to lean on, so it sets these itself. */
+.shell .hero-title {
+  margin: 0;
+  font-family: var(--mantine-font-family-headings);
+  font-weight: 700;
+}
+
+.shell .hero-lede {
+  color: var(--mantine-color-dimmed);
+  line-height: var(--mantine-line-height);
 }
 
 /* The address field: one rounded bar holding the pin, the input and the button. */

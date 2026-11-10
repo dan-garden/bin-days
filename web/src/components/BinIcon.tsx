@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { type ReactNode, useState } from 'react';
 import type { BinType } from '../../../src/core/types.js';
 import { lidPaint } from '../lib.js';
@@ -25,7 +25,7 @@ export function BinIcon({ type, colour, size = 48, label, greet }: BinIconProps)
   // A phone has no hover, so a tap opens the lid for a moment instead.
   const [tapped, setTapped] = useState<'open' | 'shut'>();
   return (
-    <motion.svg
+    <m.svg
       className="bin-icon"
       viewBox="0 0 64 72"
       height={size}
@@ -53,7 +53,7 @@ export function BinIcon({ type, colour, size = 48, label, greet }: BinIconProps)
           <g transform="translate(32 45)" className="bin-mark">
             {MARKS[type]}
           </g>
-          <motion.g
+          <m.g
             style={{ originX: 0.93, originY: 1 }}
             variants={{
               shut: { rotate: 0 },
@@ -68,10 +68,10 @@ export function BinIcon({ type, colour, size = 48, label, greet }: BinIconProps)
             <path d="M10 23H54V25.5Q54 27.5 52 27.5H12Q10 27.5 10 25.5Z" className="bin-lip" />
             <rect x="51.5" y="18" width="6" height="3.4" rx="1.7" fill={lid} />
             <path d="M18 19.6H36" className="bin-shine" />
-          </motion.g>
+          </m.g>
         </>
       )}
-    </motion.svg>
+    </m.svg>
   );
 }
 

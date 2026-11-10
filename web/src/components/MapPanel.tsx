@@ -14,15 +14,18 @@ type MapPanelProps = Pick<CoverageMapProps, 'frame' | 'highlight' | 'pin'>;
 export function MapPanel(props: MapPanelProps) {
   const [coverage, setCoverage] = useState<Coverage>();
   const [failed, setFailed] = useState(false);
-  // Fetch the boundaries (and the map code) once the map first scrolls into view.
+  // The map is the heaviest thing on the page by far, so it waits until it is on screen
+  // and the visitor has shown signs of life (or a few seconds have passed). That keeps
+  // the page quick to become usable; the map follows a moment later.
   const { ref, inViewport } = useInViewport();
-  const [seen, setSeen] = useState(false);
+  const ready = useVisitorActive(5000);
+  const [wanted, setWanted] = useState(false);
   useEffect(() => {
-    if (inViewport) setSeen(true);
-  }, [inViewport]);
+    if (inViewport && ready) setWanted(true);
+  }, [inViewport, ready]);
   useEffect(() => {
-    if (seen) getCoverage().then(setCoverage, () => setFailed(true));
-  }, [seen]);
+    if (wanted) getCoverage().then(setCoverage, () => setFailed(true));
+  }, [wanted]);
 
   return (
     <div className="coverage-map-frame" ref={ref}>
@@ -43,4 +46,21 @@ export function MapPanel(props: MapPanelProps) {
       )}
     </div>
   );
+}
+
+/** True once the visitor moves, scrolls, taps or types, or after `fallbackMs` at the latest. */
+function useVisitorActive(fallbackMs: number): boolean {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    const events = ['pointermove', 'pointerdown', 'keydown', 'scroll', 'touchstart'];
+    const activate = () => setActive(true);
+    const options = { once: true, passive: true };
+    for (const event of events) window.addEventListener(event, activate, options);
+    const timer = setTimeout(activate, fallbackMs);
+    return () => {
+      for (const event of events) window.removeEventListener(event, activate);
+      clearTimeout(timer);
+    };
+  }, [fallbackMs]);
+  return active;
 }

@@ -50,3 +50,26 @@ export const statePath = (state: string) => `/bin-day/${state.toLowerCase()}`;
 
 /** A council's landing page on the website, e.g. `/bin-day/qld/brisbane`. */
 export const councilPath = (council: { id: string }) => `/bin-day/${council.id}`;
+
+/** The heading and one-line introduction of each kind of page, shared by the server and the UI so they match exactly. */
+export function pageHeading(page: {
+  council?: { name: string } | undefined;
+  state?: AustralianState | undefined;
+}): { title: string; lede: string } {
+  if (page.council) {
+    return {
+      title: `${shortCouncilName(page.council.name)} bin day`,
+      lede: `Type your address to see when ${page.council.name} collects, and which bins go out.`,
+    };
+  }
+  if (page.state) {
+    return {
+      title: `${STATE_NAMES[page.state]} bin days`,
+      lede: 'Type your address, or pick your council below, to see which bins go out.',
+    };
+  }
+  return {
+    title: 'Which bins go out?',
+    lede: "Type your address and we'll check your council's collection calendar.",
+  };
+}

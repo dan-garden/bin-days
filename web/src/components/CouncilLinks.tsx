@@ -1,8 +1,8 @@
 import { councilPath, shortCouncilName } from '../../../src/councils/names.js';
-import type { CouncilInfo } from '../api.js';
+import type { CouncilLink } from '../api.js';
 
 interface CouncilLinksProps {
-  councils: Array<Pick<CouncilInfo, 'id' | 'name' | 'state'>>;
+  councils: CouncilLink[];
   /** Show each council's state, for lists that mix states. */
   showState?: boolean;
   /** Called with a council id while the pointer or focus is on its link, and with nothing after. */

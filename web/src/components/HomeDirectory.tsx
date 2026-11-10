@@ -1,13 +1,13 @@
 import { Stack, Text, TextInput, Title } from '@mantine/core';
 import { useState } from 'react';
 import { STATE_NAMES, shortCouncilName, statePath } from '../../../src/councils/names.js';
-import type { CouncilInfo } from '../api.js';
+import type { CouncilLink } from '../api.js';
 import { groupByState } from '../lib.js';
 import { CouncilLinks } from './CouncilLinks.js';
 import { MapPanel } from './MapPanel.js';
 
 interface HomeDirectoryProps {
-  councils: CouncilInfo[];
+  councils: CouncilLink[];
   /** The council of the address just looked up, outlined on the map. */
   highlight?: string | undefined;
   pin?: { latitude: number; longitude: number } | undefined;

@@ -58,7 +58,7 @@ describe('website pages', () => {
     expect(body).toContain(
       '<link rel="canonical" href="https://binday.test/bin-day/qld/brisbane" />',
     );
-    expect(body).toContain('<h1>Brisbane bin day</h1>');
+    expect(body).toContain('<h1 class="hero-title">Brisbane bin day</h1>');
     expect(body).toContain('href="https://example.org/bins?a=1&amp;b=2"'); // escaped
     const data = /<script id="page-data"[^>]*>(.*?)<\/script>/.exec(body)?.[1];
     expect(JSON.parse(data ?? '')).toEqual({
@@ -113,7 +113,7 @@ describe('website pages', () => {
     });
     const { body } = await get('/bin-day/qld/brisbane', { coverage });
     expect(body).toContain(
-      '<a href="/">Bin Days</a> › <a href="/bin-day/qld">Queensland</a> › Brisbane bin day',
+      '<nav class="shell-trail"><a href="/">Bin Days</a> › <a href="/bin-day/qld">Queensland</a> › Brisbane bin day</nav>',
     );
     const near = body.indexOf('/bin-day/qld/near');
     expect(near).toBeGreaterThan(-1);
@@ -135,7 +135,7 @@ describe('website pages', () => {
   it('still serves a readable page when the UI cannot be loaded', async () => {
     const { response, body } = await get('/', { loadShell: async () => undefined });
     expect(response.status).toBe(200);
-    expect(body).toContain('<h1>Which bins go out?</h1>');
+    expect(body).toContain('<h1 class="hero-title">Which bins go out?</h1>');
   });
 
   it('uses the configured site address for canonical links', async () => {

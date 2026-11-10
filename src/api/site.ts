@@ -2,6 +2,7 @@ import type { Context, Hono } from 'hono';
 import { AUSTRALIAN_STATES, type AustralianState } from '../core/types.js';
 import {
   councilPath,
+  pageHeading,
   STATE_NAMES,
   shortCouncilName,
   sourceDescription,
@@ -52,6 +53,8 @@ export interface PageData {
   council?: Pick<CouncilInfo, 'id' | 'name' | 'state' | 'website' | 'platform'>;
   /** The closest other councils, nearest first. */
   nearby?: CouncilLink[];
+  /** Every supported council, on the pages that list them, so the UI needn't fetch them. */
+  councils?: CouncilLink[];
 }
 
 const escapeHtml = (text: string) =>
@@ -62,6 +65,7 @@ const scriptJson = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u0
 
 const link = (href: string, text: string) =>
   `<a href="${escapeHtml(href)}">${escapeHtml(text)}</a>`;
+const asLink = ({ id, name, state }: CouncilLink): CouncilLink => ({ id, name, state });
 const councilLinks = (councils: CouncilLink[]) =>
   `<ul>${councils.map((c) => `<li>${link(councilPath(c), `${shortCouncilName(c.name)} bin day`)}</li>`).join('')}</ul>`;
 
@@ -135,15 +139,27 @@ function renderPage(shell: string, origin: string, page: Page): string {
   ].join('\n    ');
   const trail =
     page.trail.length > 1
-      ? `<nav>${page.trail
+      ? `<nav class="shell-trail">${page.trail
           .map((step, index) =>
             index < page.trail.length - 1 ? link(step.path, step.name) : escapeHtml(step.name),
           )
           .join(' › ')}</nav>`
       : '';
-  return shell
-    .replace(HEAD, () => head)
-    .replace(BODY, () => `<div class="seo-fallback">${[trail, ...page.body].join('\n')}</div>`);
+  // The top of the page, laid out with the UI's own styles, so the first paint already looks
+  // like the finished page and the UI takes over without a jump. The rest (`seo-more`) is for
+  // readers without JavaScript; the UI shows the same content its own way.
+  const { title, lede } = pageHeading(page.data);
+  const shellHtml = `<div class="shell">
+<div class="shell-topbar">${link('/', SITE_NAME)}</div>
+${trail}
+<div class="hero${page.trail.length > 1 ? ' hero-compact' : ''}">
+<div class="shell-bins"></div>
+<h1 class="hero-title">${escapeHtml(title)}</h1>
+<p class="hero-lede">${escapeHtml(lede)}</p>
+</div>
+</div>
+<div class="seo-more">${page.body.join('\n')}</div>`;
+  return shell.replace(HEAD, () => head).replace(BODY, () => shellHtml);
 }
 
 const HOME = { name: SITE_NAME, path: '/' };
@@ -170,9 +186,8 @@ function homePage(councils: CouncilInfo[]): Page {
     title: `${SITE_NAME}: which bins go out this week?`,
     description,
     trail: [HOME],
-    data: {},
+    data: { councils: councils.map(asLink) },
     body: [
-      '<h1>Which bins go out?</h1>',
       `<p>${escapeHtml(description)}</p>`,
       '<h2>Supported councils</h2>',
       ...byState(councils).flatMap(([state, list]) => [
@@ -193,9 +208,8 @@ function statePage(state: AustralianState, councils: CouncilInfo[]): Page {
     title: `${name} bin days: find your council's collection day`,
     description,
     trail: [HOME, { name, path: statePath(state) }],
-    data: { state },
+    data: { state, councils: councils.map(asLink) },
     body: [
-      `<h1>${escapeHtml(name)} bin days</h1>`,
       `<p>${escapeHtml(description)}</p>`,
       `<h2>Councils in ${escapeHtml(name)}</h2>`,
       councilLinks(inState),
@@ -229,7 +243,6 @@ function councilPage(council: CouncilInfo, nearby: CouncilLink[]): Page {
       nearby,
     },
     body: [
-      `<h1>${escapeHtml(place)} bin day</h1>`,
       `<p>${escapeHtml(description)}</p>`,
       '<h2>How it works</h2>',
       `<ol><li>Type your street address in ${escapeHtml(place)}.</li><li>We look your property up with ${escapeHtml(council.name)}.</li><li>You see your next collection day and which bins to put out, plus the weeks after.</li></ol>`,

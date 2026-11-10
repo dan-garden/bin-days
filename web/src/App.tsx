@@ -10,13 +10,13 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { STATE_NAMES, shortCouncilName, statePath } from '../../src/councils/names.js';
+import { AnimatePresence, m } from 'motion/react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { pageHeading, STATE_NAMES, shortCouncilName, statePath } from '../../src/councils/names.js';
 import {
   ApiError,
   type BinDaysResult,
-  type CouncilInfo,
+  type CouncilLink,
   getCollections,
   getCouncils,
   pageData,
@@ -26,7 +26,6 @@ import { BinIcon } from './components/BinIcon.js';
 import { CouncilAbout } from './components/CouncilAbout.js';
 import { HomeDirectory } from './components/HomeDirectory.js';
 import { Outbound } from './components/Outbound.js';
-import { Result } from './components/Result.js';
 import { StateDirectory } from './components/StateDirectory.js';
 import { ThemeToggle } from './components/ThemeToggle.js';
 
@@ -49,25 +48,17 @@ function remember(address: string) {
   } catch {}
 }
 
+// The result view (and the tooltip code it brings) is only needed once an address is looked up.
+const Result = lazy(() =>
+  import('./components/Result.js').then((module) => ({ default: module.Result })),
+);
+
 /** Set when this is a council's landing page, e.g. `/bin-day/qld/brisbane`. */
 const page = pageData();
 
 /** The page's heading, and the trail back to the home page, for each kind of page. */
 const isHome = !page.council && !page.state;
-const heading = page.council
-  ? {
-      title: `${shortCouncilName(page.council.name)} bin day`,
-      lede: `Type your address to see when ${page.council.name} collects, and which bins go out.`,
-    }
-  : page.state
-    ? {
-        title: `${STATE_NAMES[page.state]} bin days`,
-        lede: 'Type your address, or pick your council below, to see which bins go out.',
-      }
-    : {
-        title: 'Which bins go out?',
-        lede: "Type your address and we'll check your council's collection calendar.",
-      };
+const heading = pageHeading(page);
 const trail: Array<{ name: string; href?: string }> = page.council
   ? [
       { name: STATE_NAMES[page.council.state], href: statePath(page.council.state) },
@@ -86,7 +77,8 @@ type Lookup =
 export function App() {
   const [address, setAddress] = useState(remembered);
   const [lookup, setLookup] = useState<Lookup>({ status: 'idle' });
-  const [councils, setCouncils] = useState<CouncilInfo[]>([]);
+  // The server puts the council list in the page; it is only fetched if that is missing.
+  const [councils, setCouncils] = useState<CouncilLink[]>(page.councils ?? []);
   const request = useRef<AbortController>(null);
 
   const find = useCallback(async (submitted: string) => {
@@ -118,7 +110,7 @@ export function App() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs once, for the address remembered from last time.
   useEffect(() => {
     if (address) find(address);
-    getCouncils().then(setCouncils, () => {});
+    if (!page.councils && !page.council) getCouncils().then(setCouncils, () => {});
   }, []);
 
   const located = lookup.status === 'done' ? lookup.result.address : undefined;
@@ -133,155 +125,152 @@ export function App() {
   );
 
   return (
-    <>
-      <div className="backdrop" aria-hidden="true" />
-      <Container size="md" className="page">
-        <header className="topbar">
-          <Anchor href="/" c="inherit" underline="never">
-            <Group gap={8}>
-              <BinIcon type="general" size={28} />
-              <Text fw={700} size="lg">
-                Bin Days
-              </Text>
-            </Group>
-          </Anchor>
-          <Group gap="md">
-            <Anchor href={isHome ? '#coverage' : '/#coverage'} c="inherit" size="sm">
-              Councils
-            </Anchor>
-            <Outbound href="/docs" c="inherit" size="sm">
-              API
-            </Outbound>
-            <Outbound href={REPO} c="inherit" aria-label="Source code on GitHub" lh={0}>
-              <GitHubIcon />
-            </Outbound>
-            <ThemeToggle />
+    <Container size="md" className="page">
+      <header className="topbar">
+        <Anchor href="/" c="inherit" underline="never">
+          <Group gap={8}>
+            <BinIcon type="general" size={28} />
+            <Text fw={700} size="lg">
+              Bin Days
+            </Text>
           </Group>
-        </header>
+        </Anchor>
+        <Group gap="md">
+          <Anchor
+            href={isHome ? '#coverage' : '/#coverage'}
+            c="inherit"
+            size="sm"
+            underline="hover"
+          >
+            Councils
+          </Anchor>
+          <Outbound href="/docs" c="inherit" size="sm" underline="hover">
+            API
+          </Outbound>
+          <Outbound href={REPO} c="inherit" aria-label="Source code on GitHub" lh={0}>
+            <GitHubIcon />
+          </Outbound>
+          <ThemeToggle />
+        </Group>
+      </header>
 
-        <main>
-          {trail.length > 0 && (
-            <Breadcrumbs className="trail" separator="›" aria-label="Breadcrumb">
-              <Anchor href="/" size="sm">
-                Bin Days
-              </Anchor>
-              {trail.map((step) =>
-                step.href ? (
-                  <Anchor key={step.name} href={step.href} size="sm">
-                    {step.name}
-                  </Anchor>
-                ) : (
-                  <Text key={step.name} size="sm" c="dimmed" aria-current="page">
-                    {step.name}
-                  </Text>
-                ),
-              )}
-            </Breadcrumbs>
-          )}
-          <section className={isHome ? 'hero' : 'hero hero-compact'}>
-            <motion.div
-              className="hero-bins"
-              initial="hidden"
-              animate="shown"
-              variants={{ shown: { transition: { staggerChildren: 0.09 } } }}
-            >
-              {(['general', 'recycling', 'organics', 'glass'] as const).map((type, index) => (
-                <motion.div
-                  key={type}
-                  variants={{
-                    hidden: { opacity: 0, y: 30, scale: 0.7 },
-                    shown: {
-                      opacity: 1,
-                      y: 0,
-                      scale: 1,
-                      transition: { type: 'spring', stiffness: 300, damping: 18 },
-                    },
-                  }}
-                >
-                  <BinIcon type={type} size={76} greet={0.7 + index * 0.16} />
-                </motion.div>
-              ))}
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-            >
-              <Title className="hero-title">{heading.title}</Title>
-              <Text className="hero-lede" c="dimmed">
-                {heading.lede}
-              </Text>
-              <AddressForm
-                address={address}
-                loading={lookup.status === 'loading'}
-                onSubmit={find}
-                onClear={clear}
-              />
-            </motion.div>
-          </section>
+      <main>
+        {trail.length > 0 && (
+          <Breadcrumbs className="trail" separator="›" aria-label="Breadcrumb">
+            <Anchor href="/" size="sm">
+              Bin Days
+            </Anchor>
+            {trail.map((step) =>
+              step.href ? (
+                <Anchor key={step.name} href={step.href} size="sm">
+                  {step.name}
+                </Anchor>
+              ) : (
+                <Text key={step.name} size="sm" c="dimmed" aria-current="page">
+                  {step.name}
+                </Text>
+              ),
+            )}
+          </Breadcrumbs>
+        )}
+        <section className={isHome ? 'hero' : 'hero hero-compact'}>
+          <m.div
+            className="hero-bins"
+            initial="hidden"
+            animate="shown"
+            variants={{ shown: { transition: { staggerChildren: 0.09 } } }}
+          >
+            {(['general', 'recycling', 'organics', 'glass'] as const).map((type, index) => (
+              <m.div
+                key={type}
+                variants={{
+                  hidden: { opacity: 0, y: 30, scale: 0.7 },
+                  shown: {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    transition: { type: 'spring', stiffness: 300, damping: 18 },
+                  },
+                }}
+              >
+                <BinIcon type={type} size={76} greet={0.7 + index * 0.16} />
+              </m.div>
+            ))}
+          </m.div>
+          {/* No entrance animation: the server already painted this heading in the same place. */}
+          <div>
+            <Title className="hero-title">{heading.title}</Title>
+            <Text className="hero-lede" c="dimmed">
+              {heading.lede}
+            </Text>
+            <AddressForm
+              address={address}
+              loading={lookup.status === 'loading'}
+              onSubmit={find}
+              onClear={clear}
+            />
+          </div>
+        </section>
 
-          <section className="result" aria-live="polite">
-            <AnimatePresence mode="wait">
-              {lookup.status === 'loading' && (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <Skeleton h={14} w="60%" mb="lg" />
-                  <Skeleton h={190} radius="xl" />
-                </motion.div>
-              )}
-              {lookup.status === 'done' && (
-                <Result
-                  key={lookup.result.address.matched}
-                  result={lookup.result}
-                  pageCouncil={page.council?.id}
-                />
-              )}
-              {lookup.status === 'failed' && (
-                <motion.div
-                  key="failed"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <Failure error={lookup.error} onPick={find} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </section>
+        <section className="result" aria-live="polite">
+          <AnimatePresence mode="wait">
+            {lookup.status === 'loading' && (
+              <m.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <Skeleton h={14} w="60%" mb="lg" />
+                <Skeleton h={190} radius="xl" />
+              </m.div>
+            )}
+            {lookup.status === 'done' && (
+              <Suspense key={lookup.result.address.matched} fallback={null}>
+                <Result result={lookup.result} pageCouncil={page.council?.id} />
+              </Suspense>
+            )}
+            {lookup.status === 'failed' && (
+              <m.div
+                key="failed"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <Failure error={lookup.error} onPick={find} />
+              </m.div>
+            )}
+          </AnimatePresence>
+        </section>
 
-          {page.council ? (
-            <CouncilAbout council={page.council} nearby={page.nearby ?? []} pin={pin} />
-          ) : page.state ? (
-            <StateDirectory state={page.state} councils={councils} highlight={found} pin={pin} />
-          ) : (
-            <HomeDirectory councils={councils} highlight={found} pin={pin} />
-          )}
-        </main>
+        {page.council ? (
+          <CouncilAbout council={page.council} nearby={page.nearby ?? []} pin={pin} />
+        ) : page.state ? (
+          <StateDirectory state={page.state} councils={councils} highlight={found} pin={pin} />
+        ) : (
+          <HomeDirectory councils={councils} highlight={found} pin={pin} />
+        )}
+      </main>
 
-        <footer className="footer">
-          <Text size="sm" c="dimmed">
-            Dates come from each council's published calendar. Check with your council around public
-            holidays. Bin Days is free and open:{' '}
-            <Outbound href="/docs" inherit>
-              use the API
-            </Outbound>{' '}
-            or{' '}
-            <Outbound href={REPO} inherit>
-              read the code
-            </Outbound>
-            . Made by{' '}
-            <Outbound href="https://github.com/dan-garden" inherit>
-              Dan Garden
-            </Outbound>
-            .
-          </Text>
-        </footer>
-      </Container>
-    </>
+      <footer className="footer">
+        <Text size="sm" c="dimmed">
+          Dates come from each council's published calendar. Check with your council around public
+          holidays. Bin Days is free and open:{' '}
+          <Outbound href="/docs" inherit>
+            use the API
+          </Outbound>{' '}
+          or{' '}
+          <Outbound href={REPO} inherit>
+            read the code
+          </Outbound>
+          . Made by{' '}
+          <Outbound href="https://github.com/dan-garden" inherit>
+            Dan Garden
+          </Outbound>
+          .
+        </Text>
+      </footer>
+    </Container>
   );
 }
 

@@ -12,7 +12,16 @@
     />
     <!--/seo:head-->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <style>.seo-fallback{max-width:40rem;margin:4rem auto;padding:0 1rem;font-family:system-ui,sans-serif;line-height:1.5}</style>
+    <!-- Fetched alongside the stylesheet, so the heading is drawn once in its real font. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/assets/outfit-latin-wght-normal-Bc-8i84L.woff2"
+    />
+    <meta name="theme-color" content="#f5f7f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1412" media="(prefers-color-scheme: dark)" />
     <script>
       // Set the colour scheme before first paint so dark mode doesn't flash white: the
       // choice made with the theme button if there is one, else the system setting.
@@ -25,10 +34,12 @@
           chosen === 'dark' ||
           (chosen !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.dataset.mantineColorScheme = dark ? 'dark' : 'light';
+        // Marks that the app is about to take over, so the no-JavaScript content stays hidden.
+        document.documentElement.classList.add('js');
       })();
     </script>
-    <script type="module" crossorigin src="/assets/index-3xg9o0NR.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CW5Q7MNc.css">
+    <script type="module" crossorigin src="/assets/index-BmHybHXX.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-D4wNEoEo.css">
   </head>
   <body>
     <div id="root"><!--seo:body--></div>

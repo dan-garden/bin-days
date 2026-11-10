@@ -1,5 +1,5 @@
 import { Anchor, Badge, Group, Paper, Stack, Text, Title, Tooltip } from '@mantine/core';
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { councilPath } from '../../../src/councils/names.js';
 import type { Bin, BinDaysResult, CollectionDay, ServiceSummary } from '../api.js';
 import { daysUntil, formatDate, relativeDay } from '../lib.js';
@@ -29,14 +29,14 @@ export function Result({ result, pageCouncil }: ResultProps) {
   const estimated = result.days.some((day) => day.bins.some((b) => b.confidence === 'projected'));
 
   return (
-    <motion.div
+    <m.div
       variants={stagger}
       initial="hidden"
       animate="shown"
       exit={{ opacity: 0, transition: { duration: 0.15 } }}
     >
       <Stack gap="lg">
-        <motion.div variants={rise}>
+        <m.div variants={rise}>
           <Text c="dimmed" size="sm">
             {address.matched} ·{' '}
             {council.id === pageCouncil ? (
@@ -51,9 +51,9 @@ export function Result({ result, pageCouncil }: ResultProps) {
               Show on map
             </Anchor>
           </Text>
-        </motion.div>
+        </m.div>
 
-        <motion.div variants={rise}>
+        <m.div variants={rise}>
           <Paper className="next-card" radius="xl" p={{ base: 'lg', sm: 'xl' }}>
             {next ? (
               <NextCollection day={next} today={today} />
@@ -61,26 +61,26 @@ export function Result({ result, pageCouncil }: ResultProps) {
               <Title order={2}>No upcoming collections found</Title>
             )}
           </Paper>
-        </motion.div>
+        </m.div>
 
         {later.length > 0 && (
-          <motion.div variants={rise}>
+          <m.div variants={rise}>
             <Stack gap="xs">
               <Title order={3} size="h4">
                 After that
               </Title>
-              <motion.ol className="timeline" variants={stagger}>
+              <m.ol className="timeline" variants={stagger}>
                 {later.map((day) => (
-                  <motion.li key={day.date} variants={rise}>
+                  <m.li key={day.date} variants={rise}>
                     <DayRow day={day} today={today} />
-                  </motion.li>
+                  </m.li>
                 ))}
-              </motion.ol>
+              </m.ol>
             </Stack>
-          </motion.div>
+          </m.div>
         )}
 
-        <motion.div variants={rise}>
+        <m.div variants={rise}>
           <Stack gap="xs">
             <Title order={3} size="h4">
               Your bins
@@ -97,9 +97,9 @@ export function Result({ result, pageCouncil }: ResultProps) {
               </Text>
             )}
           </Stack>
-        </motion.div>
+        </m.div>
       </Stack>
-    </motion.div>
+    </m.div>
   );
 }
 

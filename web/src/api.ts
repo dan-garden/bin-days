@@ -5,6 +5,8 @@ import type { BinDaysResult, CollectionDay, Coverage, ServiceSummary } from '../
 /** The API's own types, so the UI can't drift from the response contract. */
 export type { BinDaysResult, CollectionDay, CouncilInfo, Coverage, ServiceSummary };
 export type Bin = CollectionDay['bins'][number];
+/** What a link to a council needs. */
+export type CouncilLink = Pick<CouncilInfo, 'id' | 'name' | 'state'>;
 
 export class ApiError extends Error {
   constructor(
