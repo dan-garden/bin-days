@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { normaliseState } from '../core/address.js';
+import { secondsUntilMidnight } from '../core/date.js';
 import { BinDaysError, type BinDaysErrorCode } from '../core/errors.js';
 import type { BinDaysService } from '../service.js';
 import { CollectionsQuery, DOCS_HTML, openApiDocument } from './openapi.js';
@@ -24,7 +25,7 @@ export function createApp(service: BinDaysService): Hono {
     c.header('x-robots-tag', 'noindex');
   });
 
-  app.get('/health', (c) => c.json({ ok: true }));
+  app.get('/health', async (c) => c.json({ ok: true, cache: await service.cacheStatus() }));
 
   app.get('/openapi.json', cors(), (c) => c.json(openApiDocument()));
   app.get('/docs', (c) => c.html(DOCS_HTML));
@@ -46,8 +47,10 @@ export function createApp(service: BinDaysService): Hono {
       ...(to ? { to } : {}),
       ...(council ? { council } : {}),
     });
-    // `s-maxage` lets a CDN in front (e.g. Vercel's) answer repeats without running the app.
-    c.header('cache-control', 'public, max-age=1800, s-maxage=1800');
+    // The answer only changes when the day does, so a CDN in front (e.g. Vercel's) keeps it
+    // until the council's midnight. Browsers check back sooner.
+    const seconds = secondsUntilMidnight(result.timezone);
+    c.header('cache-control', `public, max-age=${Math.min(seconds, 1800)}, s-maxage=${seconds}`);
     return c.json(result);
   });
 

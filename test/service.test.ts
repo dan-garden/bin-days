@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/api/app.js';
 import { CollectionsResponse, CoverageResponse, type openApiDocument } from '../src/api/openapi.js';
 import { MemoryCache } from '../src/core/cache.js';
-import type { BinDaysErrorCode } from '../src/core/errors.js';
+import { BinDaysError, type BinDaysErrorCode } from '../src/core/errors.js';
 import { CouncilRegistry } from '../src/councils/registry.js';
 import type { CouncilAdapter } from '../src/councils/types.js';
 import { type BinDaysResult, BinDaysService } from '../src/service.js';
@@ -37,6 +37,8 @@ const testCouncil: CouncilAdapter = {
 };
 
 function makeService(lgaCode = '99999') {
+  // Tue 10 Nov, midday in Brisbane. Tests move it to change the day.
+  const clock = { now: new Date('2026-11-10T02:00:00Z') };
   const geocoder = {
     geocode: vi.fn(async () => ({
       latitude: -27.9,
@@ -71,9 +73,9 @@ function makeService(lgaCode = '99999') {
     cache: new MemoryCache(),
     geocoder,
     lgaResolver,
-    now: () => new Date('2026-11-10T02:00:00Z'), // Tue 10 Nov, midday in Brisbane
+    now: () => clock.now,
   });
-  return { service, geocoder, lgaResolver };
+  return { service, geocoder, lgaResolver, clock };
 }
 
 describe('BinDaysService', () => {
@@ -132,6 +134,45 @@ describe('BinDaysService', () => {
     expect(testCouncil.getSchedule).toHaveBeenCalledTimes(1);
   });
 
+  it('looks a property up once a day, and again the next day', async () => {
+    const { service, clock } = makeService();
+    vi.mocked(testCouncil.getSchedule).mockClear();
+    await service.lookup({ address: '3 Daily St' });
+    clock.now = new Date('2026-11-10T13:00:00Z'); // 11pm the same day in Brisbane
+    await service.lookup({ address: '3 Daily St' });
+    expect(testCouncil.getSchedule).toHaveBeenCalledTimes(1);
+    clock.now = new Date('2026-11-10T15:00:00Z'); // 1am the next day
+    await service.lookup({ address: '3 Daily St' });
+    expect(testCouncil.getSchedule).toHaveBeenCalledTimes(2);
+  });
+
+  it("falls back to yesterday's schedule when the council's site is down", async () => {
+    const { service, clock } = makeService();
+    await service.lookup({ address: '4 Outage St' });
+    clock.now = new Date('2026-11-11T02:00:00Z');
+    vi.mocked(testCouncil.getSchedule).mockRejectedValueOnce(
+      new BinDaysError('UPSTREAM_ERROR', 'council site is down'),
+    );
+    const result = await service.lookup({ address: '4 Outage St' });
+    expect(result.today).toBe('2026-11-11');
+    expect(result.next?.date).toBe('2026-11-13');
+
+    // An address it has never seen has nothing to fall back to, and other errors are not hidden.
+    vi.mocked(testCouncil.getSchedule).mockRejectedValueOnce(
+      new BinDaysError('UPSTREAM_ERROR', 'council site is down'),
+    );
+    await expect(service.lookup({ address: '5 Outage St' })).rejects.toMatchObject({
+      code: 'UPSTREAM_ERROR',
+    });
+    clock.now = new Date('2026-11-12T02:00:00Z');
+    vi.mocked(testCouncil.getSchedule).mockRejectedValueOnce(
+      new BinDaysError('ADDRESS_NOT_FOUND', 'gone'),
+    );
+    await expect(service.lookup({ address: '4 Outage St' })).rejects.toMatchObject({
+      code: 'ADDRESS_NOT_FOUND',
+    });
+  });
+
   it('skips geocoding when a council is given', async () => {
     const { service, geocoder } = makeService();
     await service.lookup({ address: '1 Test St Testville', council: 'qld/test' });
@@ -169,9 +210,16 @@ describe('HTTP API', () => {
       '/v1/collections?address=1%20Test%20St&from=2026-11-10&to=2026-11-16',
     );
     expect(res.status).toBe(200);
+    // A CDN may keep the answer for whatever is left of the council's day.
+    expect(res.headers.get('cache-control')).toMatch(/^public, max-age=\d+, s-maxage=\d+$/);
     const body = (await res.json()) as BinDaysResult;
     CollectionsResponse.parse(body); // strict: fails if the response and the spec drift
     expect(body.days.map((x: { date: string }) => x.date)).toEqual(['2026-11-13']);
+  });
+
+  it('GET /health reports the cache in use and that it works', async () => {
+    const res = await app.request('/health');
+    expect(await res.json()).toEqual({ ok: true, cache: { backend: 'memory', working: true } });
   });
 
   it('validates query params', async () => {

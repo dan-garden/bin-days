@@ -4,6 +4,7 @@ import {
   daysBetween,
   isLocalDate,
   parseAustralianDate,
+  secondsUntilMidnight,
   today,
   weekday,
 } from '../../src/core/date.js';
@@ -56,5 +57,14 @@ describe('dates', () => {
   it('rejects impossible dates', () => {
     expect(parseAustralianDate('31/02/2026')).toBeUndefined();
     expect(parseAustralianDate('no date here')).toBeUndefined();
+  });
+
+  it('counts the seconds left in the day in a timezone', () => {
+    const middayInBrisbane = new Date('2026-11-10T02:00:00Z');
+    expect(secondsUntilMidnight('Australia/Brisbane', middayInBrisbane)).toBe(12 * 3600);
+    // Sydney is an hour ahead in November (daylight saving).
+    expect(secondsUntilMidnight('Australia/Sydney', middayInBrisbane)).toBe(11 * 3600);
+    // Never zero, so it is always usable as a cache lifetime.
+    expect(secondsUntilMidnight('Australia/Brisbane', new Date('2026-11-10T13:59:59Z'))).toBe(60);
   });
 });

@@ -74,6 +74,21 @@ export function parseWeekday(name: string): number | undefined {
   return i === -1 ? undefined : i;
 }
 
+/** Seconds left in the day in the given timezone. At least 60, so it can be used as a cache lifetime. */
+export function secondsUntilMidnight(timeZone: string, now: Date = new Date()): number {
+  const [hours = 0, minutes = 0, seconds = 0] = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  })
+    .format(now)
+    .split(':')
+    .map(Number);
+  return Math.max(60, 86_400 - (hours * 3600 + minutes * 60 + seconds));
+}
+
 /** Today's date in the given IANA timezone, e.g. `Australia/Brisbane`. */
 export function today(timeZone: string, now: Date = new Date()): LocalDate {
   // en-CA formats as YYYY-MM-DD.

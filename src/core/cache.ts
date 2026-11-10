@@ -9,12 +9,15 @@ import { getJson, type HttpClient } from './http.js';
  * and `UpstashCache` to hosted Redis; add others by implementing `Cache`.
  */
 export interface Cache {
+  /** Which backend this is ("memory", "sqlite", "redis"), for `/health`. */
+  readonly kind?: string;
   get<T>(key: string): Promise<T | undefined>;
   set<T>(key: string, value: T, ttlMs: number): Promise<void>;
 }
 
 /** In-memory cache with TTL and least-recently-used eviction. */
 export class MemoryCache implements Cache {
+  readonly kind = 'memory';
   readonly #entries = new Map<string, { value: unknown; expiresAt: number }>();
 
   constructor(
@@ -55,6 +58,7 @@ export class MemoryCache implements Cache {
  * Node's built-in `node:sqlite`, loaded only when this class is constructed.
  */
 export class SqliteCache implements Cache {
+  readonly kind = 'sqlite';
   readonly #db: DatabaseSync;
 
   constructor(
@@ -95,6 +99,7 @@ export class SqliteCache implements Cache {
  * degrades to cache misses rather than failing lookups.
  */
 export class UpstashCache implements Cache {
+  readonly kind = 'redis';
   constructor(
     private readonly url: string,
     private readonly token: string,
@@ -128,6 +133,7 @@ export class UpstashCache implements Cache {
 
 /** A cache that stores nothing. Useful in tests. */
 export class NoopCache implements Cache {
+  readonly kind = 'none';
   async get<T>(): Promise<T | undefined> {
     return undefined;
   }

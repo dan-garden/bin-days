@@ -1,7 +1,7 @@
 import { formatStreetLine, parseAustralianAddress } from './core/address.js';
 import { type Cache, MemoryCache, memoize } from './core/cache.js';
 import { addDays, compareDates, daysBetween, today, type Weekday, weekday } from './core/date.js';
-import { addressNotFound, councilNotSupported, invalidInput } from './core/errors.js';
+import { addressNotFound, BinDaysError, councilNotSupported, invalidInput } from './core/errors.js';
 import { createHttpClient, type HttpClient } from './core/http.js';
 import { collectionsInRange, intervalDays, nextCollection } from './core/schedule.js';
 import type {
@@ -103,12 +103,12 @@ export interface BinDaysServiceOptions {
   now?: () => Date;
 }
 
-const HOUR = 3_600_000;
-const DAY = 24 * HOUR;
+const DAY = 24 * 3_600_000;
 const TTL = {
   geocode: 30 * DAY,
   lga: 90 * DAY,
-  schedule: 6 * HOUR,
+  /** How long a schedule is kept as a fallback, for when the council's site is down. */
+  scheduleFallback: 7 * DAY,
 };
 
 export class BinDaysService {
@@ -246,9 +246,34 @@ export class BinDaysService {
     const key = `schedule:${adapter.id}:${[p.unit, p.houseNumber, p.street, p.suburb]
       .join('|')
       .toLowerCase()}`;
-    return this.#cached(key, TTL.schedule, () =>
-      adapter.getSchedule(address, { http: this.#http, cache: this.#cache, today: todayLocal }),
-    );
+    const ctx = { http: this.#http, cache: this.#cache, today: todayLocal };
+
+    // A property's bins are looked up at most once per day (the council's day).
+    // The copy is kept for a week, though: if the council's site is down
+    // tomorrow, yesterday's schedule is a far better answer than an error.
+    const cached = await this.#cache.get<{ day: LocalDate; schedule: CouncilSchedule }>(key);
+    if (cached?.schedule && cached.day === todayLocal) return cached.schedule;
+    try {
+      const schedule = await adapter.getSchedule(address, ctx);
+      await this.#cache.set(key, { day: todayLocal, schedule }, TTL.scheduleFallback);
+      return schedule;
+    } catch (error) {
+      const outage =
+        error instanceof BinDaysError &&
+        (error.code === 'UPSTREAM_ERROR' || error.code === 'PARSE_ERROR');
+      if (outage && cached?.schedule) return cached.schedule;
+      throw error;
+    }
+  }
+
+  /** Which cache is in use, and whether something written to it can be read back. */
+  async cacheStatus(): Promise<{ backend: string; working: boolean }> {
+    const probe = String(this.#now().getTime());
+    await this.#cache.set('health', probe, 60_000);
+    return {
+      backend: this.#cache.kind ?? 'custom',
+      working: (await this.#cache.get('health')) === probe,
+    };
   }
 
   async #geocode(parts: AddressParts, raw: string): Promise<GeocodeResult | undefined> {

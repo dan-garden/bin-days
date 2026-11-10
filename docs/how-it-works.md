@@ -16,7 +16,9 @@ People often name the neighbouring suburb. If nothing matches in the suburb give
 
 ## Caching
 
-Lookups are cached: geocodes for 30 days, council areas for 90 days, a property's schedule for 6 hours. The cache is in memory by default; it can live in a SQLite file or in Redis instead (see [Configuration and deploying](deploying.md)).
+Lookups are cached: geocodes for 30 days and council areas for 90 days. A property's schedule is fetched at most once a day, and the copy is kept for a week, so if a council's site is down the last known schedule is used instead of failing. API responses also tell a CDN in front (such as Vercel's) to keep each answer until midnight in the council's timezone, since that is when it changes.
+
+`/health` reports which cache is in use and whether it is working. The cache is in memory by default; it can live in a SQLite file or in Redis instead (see [Configuration and deploying](deploying.md)).
 
 ## The website
 
