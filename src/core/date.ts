@@ -70,14 +70,23 @@ export function weekdayIndex(date: LocalDate): number {
 
 export function parseWeekday(name: string): number | undefined {
   const n = name.trim().toLowerCase().slice(0, 3);
-  const i = WEEKDAYS.findIndex((d) => d.toLowerCase().startsWith(n));
+  // Fewer than three letters is not a weekday ("" would otherwise read as Sunday).
+  const i = n.length < 3 ? -1 : WEEKDAYS.findIndex((d) => d.toLowerCase().startsWith(n));
   return i === -1 ? undefined : i;
 }
 
 /** The first date on or after `today` that falls on the named weekday ("Thursday", "thu"). */
 export function nextWeekday(name: string, today: LocalDate): LocalDate | undefined {
-  const day = /^[a-z]{3,}/i.test(name.trim()) ? parseWeekday(name) : undefined;
+  const day = parseWeekday(name);
   return day === undefined ? undefined : addDays(today, (day - weekdayIndex(today) + 7) % 7);
+}
+
+/** The named weekday in the same Monday-to-Sunday week as `date`. */
+export function weekdayInWeekOf(name: string, date: LocalDate): LocalDate | undefined {
+  const day = parseWeekday(name);
+  if (day === undefined) return undefined;
+  const monday = addDays(date, -((weekdayIndex(date) + 6) % 7));
+  return addDays(monday, (day + 6) % 7);
 }
 
 /** Seconds left in the day in the given timezone. At least 60, so it can be used as a cache lifetime. */

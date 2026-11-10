@@ -1,7 +1,10 @@
 import type { Context, Hono } from 'hono';
 import { AUSTRALIAN_STATES, type AustralianState } from '../core/types.js';
 import {
+  addressFromPath,
+  addressPath,
   councilPath,
+  PAGES_PATH,
   pageHeading,
   STATE_NAMES,
   shortCouncilName,
@@ -49,6 +52,8 @@ type CouncilLink = Pick<CouncilInfo, 'id' | 'name' | 'state'>;
 export interface PageData {
   /** Set on a state's page. */
   state?: AustralianState;
+  /** Set on a shared link to one address, which the UI looks up straight away. */
+  address?: string;
   /** Set on a council's page. */
   council?: Pick<CouncilInfo, 'id' | 'name' | 'state' | 'website' | 'platform'>;
   /** The closest other councils, nearest first. */
@@ -79,6 +84,8 @@ interface Page {
   /** The trail from the home page down to this page, for the breadcrumb. */
   trail: Array<{ name: string; path: string }>;
   data: PageData;
+  /** Keep the page out of search results. */
+  private?: boolean;
   /** Plain HTML shown until the UI starts, and all that non-JavaScript readers get. */
   body: string[];
 }
@@ -127,7 +134,9 @@ function renderPage(shell: string, origin: string, page: Page, councilCount: num
   const head = [
     `<title>${escapeHtml(page.title)}</title>`,
     meta('name', 'description', page.description),
-    `<link rel="canonical" href="${escapeHtml(url)}" />`,
+    page.private
+      ? meta('name', 'robots', 'noindex')
+      : `<link rel="canonical" href="${escapeHtml(url)}" />`,
     meta('property', 'og:type', 'website'),
     meta('property', 'og:site_name', SITE_NAME),
     meta('property', 'og:title', page.title),
@@ -199,6 +208,19 @@ function homePage(councils: CouncilInfo[]): Page {
       ]),
       '<p>Developers and AI assistants: see <a href="/llms.txt">llms.txt</a> and the <a href="/docs">API documentation</a>.</p>',
     ],
+  };
+}
+
+/** A shared link to one address: the home page, opened on that address's bins. */
+function addressPage(address: string, councils: CouncilInfo[]): Page {
+  const home = homePage(councils);
+  return {
+    ...home,
+    path: addressPath(address),
+    title: `Bin days for ${address}`,
+    description: `Which bins go out, and when, at ${address}.`,
+    data: { ...home.data, address },
+    private: true,
   };
 }
 
@@ -345,7 +367,20 @@ export function addSiteRoutes(
 
   app.get('/', (c) => send(c, homePage(registry.list())));
 
-  app.get('/bin-day/:state', (c) => {
+  app.get('/address/*', async (c) => {
+    const address = addressFromPath(new URL(c.req.url).pathname);
+    return address ? send(c, addressPage(address, registry.list())) : c.redirect('/');
+  });
+
+  // The pages' parent has nothing of its own to show; the home page lists every council.
+  app.get(PAGES_PATH, (c) => c.redirect('/', 301));
+  app.get('/bin-day', (c) => c.redirect('/', 301));
+  // Where these pages used to live.
+  app.get('/bin-day/*', (c) =>
+    c.redirect(new URL(c.req.url).pathname.replace('/bin-day', PAGES_PATH), 301),
+  );
+
+  app.get(`${PAGES_PATH}/:state`, (c) => {
     const state = AUSTRALIAN_STATES.find(
       (s) => s.toLowerCase() === c.req.param('state').toLowerCase(),
     );
@@ -355,7 +390,7 @@ export function addSiteRoutes(
       : c.notFound();
   });
 
-  app.get('/bin-day/:state/:council', async (c) => {
+  app.get(`${PAGES_PATH}/:state/:council`, async (c) => {
     const id = `${c.req.param('state')}/${c.req.param('council')}`.toLowerCase();
     const council = registry.list().find((item) => item.id === id);
     if (!council) return c.notFound();

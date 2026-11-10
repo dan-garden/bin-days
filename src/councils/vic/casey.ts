@@ -1,9 +1,8 @@
 import { formatStreetLine, matchesHouseNumber, preferSuburb } from '../../core/address.js';
-import { DEFAULT_COLOURS } from '../../core/bin-types.js';
 import { daysBetween, isLocalDate, parseAustralianDate } from '../../core/date.js';
 import { addressNotFound, invalidInput, parseError } from '../../core/errors.js';
 import { getJson } from '../../core/http.js';
-import { parseFrequency } from '../../core/schedule.js';
+import { binService, parseFrequency } from '../../core/schedule.js';
 import type { BinService, LocalDate } from '../../core/types.js';
 import type { CouncilAdapter } from '../types.js';
 
@@ -64,15 +63,7 @@ export const casey: CouncilAdapter = {
       const anchor = String(property[bin.date] ?? '');
       if (!isLocalDate(anchor)) continue;
       const everyDays = cycleDays(String(property[bin.cycle] ?? ''), anchor);
-      const colour = DEFAULT_COLOURS[bin.type];
-      services.push({
-        type: bin.type,
-        name: bin.name,
-        ...(colour ? { colour } : {}),
-        recurrence: everyDays
-          ? { kind: 'interval', everyDays, anchor }
-          : { kind: 'dates', dates: [anchor] },
-      });
+      services.push(binService(bin.type, bin.name, anchor, everyDays));
     }
     return { matchedAddress: property.full_address, services, sourceUrl: url };
   },

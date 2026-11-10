@@ -1,5 +1,27 @@
+import { DEFAULT_COLOURS } from './bin-types.js';
 import { addDays, compareDates, daysBetween } from './date.js';
-import type { BinService, CollectionEvent, LocalDate, Recurrence } from './types.js';
+import type { BinService, BinType, CollectionEvent, LocalDate, Recurrence } from './types.js';
+
+/**
+ * A bin collected every `everyDays` counting from `anchor`, or only on that
+ * date when its cycle isn't known. The lid is the usual colour for its type.
+ */
+export function binService(
+  type: BinType,
+  name: string,
+  anchor: LocalDate,
+  everyDays?: number,
+): BinService {
+  const colour = DEFAULT_COLOURS[type];
+  return {
+    type,
+    name,
+    ...(colour ? { colour } : {}),
+    recurrence: everyDays
+      ? { kind: 'interval', everyDays, anchor }
+      : { kind: 'dates', dates: [anchor] },
+  };
+}
 
 /**
  * Expand a recurrence into the dates that fall within `[from, to]` (inclusive).

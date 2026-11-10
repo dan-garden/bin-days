@@ -1,14 +1,8 @@
 import { formatStreetLine, matchesHouseNumber } from '../core/address.js';
-import { DEFAULT_COLOURS } from '../core/bin-types.js';
-import {
-  addDays,
-  nextWeekday,
-  parseAustralianDate,
-  parseWeekday,
-  weekdayIndex,
-} from '../core/date.js';
+import { addDays, nextWeekday, parseAustralianDate, weekdayInWeekOf } from '../core/date.js';
 import { addressNotFound, parseError, upstreamError } from '../core/errors.js';
 import type { HttpClient } from '../core/http.js';
+import { binService } from '../core/schedule.js';
 import type { BinService, BinType, LocalDate } from '../core/types.js';
 import type { CouncilAdapter, CouncilInfo } from '../councils/types.js';
 
@@ -209,15 +203,13 @@ export function parsePanelDate(
     )?.[0];
   if (dated) return parseAustralianDate(dated.replace(/(\d)(st|nd|rd|th)/, '$1')) ?? undefined;
 
-  const day = parseWeekday(WEEKDAY.exec(text)?.[0] ?? '?');
-  if (day === undefined) return undefined;
+  const day = WEEKDAY.exec(text)?.[0];
+  if (!day) return undefined;
   const relative = /(this|next)\s+week/i.exec(text)?.[1]?.toLowerCase();
   if (relative) {
-    // The named weekday of this (Monday-to-Sunday) week, or of the week after.
-    const monday = addDays(today, -((weekdayIndex(today) + 6) % 7));
-    return addDays(monday, ((day + 6) % 7) + (relative === 'next' ? 7 : 0));
+    return weekdayInWeekOf(day, relative === 'next' ? addDays(today, 7) : today);
   }
-  return everyDays === 7 ? nextWeekday(WEEKDAY.exec(text)?.[0] ?? '', today) : undefined;
+  return everyDays === 7 ? nextWeekday(day, today) : undefined;
 }
 
 /** The cycle a field spells out, if it does. ("Week B" or "This Week" say nothing about it.) */
@@ -245,16 +237,21 @@ export function createIntraMapsCouncil(config: IntraMapsConfig): CouncilAdapter 
     platform: 'intramaps',
     async getSchedule(address, { http, today }) {
       const { parts } = address;
-      // Some councils index "Estuary Road" and others "Estuary RD", so try both spellings.
-      const searches = [false, true].map((abbreviate) =>
-        [formatStreetLine(parts, { includeUnit: true, abbreviate }), parts.suburb]
-          .filter(Boolean)
-          .join(' '),
+      // Some councils index "Estuary Road" and others "Estuary RD", and some find nothing once a
+      // suburb is added, so try each spelling with the suburb and then without.
+      const lines = [false, true].map((abbreviate) =>
+        formatStreetLine(parts, { includeUnit: true, abbreviate }),
       );
+      const suburb = parts.suburb ?? '';
+      const searches = new Set([...lines.map((line) => `${line} ${suburb}`.trim()), ...lines]);
       let panel: Awaited<ReturnType<typeof readIntraMapsPanel>>;
-      for (const search of new Set(searches)) {
-        panel = await readIntraMapsPanel(http, config, search, (shown) =>
-          matchesHouseNumber(shown, parts),
+      for (const search of searches) {
+        panel = await readIntraMapsPanel(
+          http,
+          config,
+          search,
+          (shown) =>
+            matchesHouseNumber(shown, parts) && shown.toUpperCase().includes(suburb.toUpperCase()),
         );
         if (panel) break;
       }
@@ -269,15 +266,7 @@ export function createIntraMapsCouncil(config: IntraMapsConfig): CouncilAdapter 
         const everyDays = statedCycle(text) ?? bin.everyDays;
         const next = parsePanelDate(text, today, everyDays);
         if (!next) continue;
-        const colour = DEFAULT_COLOURS[bin.type];
-        services.push({
-          type: bin.type,
-          name: bin.name,
-          ...(colour ? { colour } : {}),
-          recurrence: everyDays
-            ? { kind: 'interval', everyDays, anchor: next }
-            : { kind: 'dates', dates: [next] },
-        });
+        services.push(binService(bin.type, bin.name, next, everyDays));
       }
       if (!services.length) {
         throw parseError(`No bin services found for ${panel.address}`, {

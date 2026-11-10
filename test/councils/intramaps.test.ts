@@ -115,6 +115,36 @@ describe('IntraMaps adapter', () => {
     ).rejects.toMatchObject({ code: 'ADDRESS_NOT_FOUND' });
   });
 
+  it('searches again without the suburb, for councils that find nothing with one', async () => {
+    const searches: string[] = [];
+    const http = fakeHttp((url, init) => {
+      if (url.pathname.endsWith('/Search/')) {
+        const [search] = JSON.parse(String(init?.body)).fields;
+        searches.push(search);
+        // As Kalamunda answers: nothing with a suburb, and other suburbs' houses without.
+        const found = search.includes('Baldivis')
+          ? []
+          : [
+              { displayValue: '7 MAKYBE DRIVE (Lot 2), KARNUP, 6176', dbKey: '1' },
+              { displayValue: '7 MAKYBE DRIVE (Lot 9), BALDIVIS, 6171', dbKey: '2' },
+            ];
+        return json({ fullText: found });
+      }
+      if (url.pathname.endsWith('/Search/Refine/Set')) {
+        expect(JSON.parse(String(init?.body)).dbKey).toBe('2');
+        return json({
+          infoPanels: {
+            info1: { feature: { fields: [{ name: 'Refuse Day', value: 'Monday' }] } },
+          },
+        });
+      }
+      return setupNoMatch().fetch(url, init);
+    });
+    const schedule = await council.getSchedule(address('7 Makybe Dr, Baldivis WA'), ctx(http));
+    expect(searches).toEqual(['7 Makybe Drive Baldivis', '7 Makybe Dr Baldivis', '7 Makybe Drive']);
+    expect(schedule.matchedAddress).toBe('7 MAKYBE DRIVE (Lot 9), BALDIVIS, 6171');
+  });
+
   function setupNoMatch() {
     return fakeHttp((url) => {
       if (url.pathname.endsWith('/Projects/')) {

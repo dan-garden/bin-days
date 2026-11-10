@@ -46,17 +46,17 @@ describe('website pages', () => {
     expect(body).not.toContain('<title>Default</title>');
     expect(body).toContain('<link rel="canonical" href="https://binday.test/" />');
     expect(body).toContain('Free for 2 Australian councils, including Brisbane.');
-    expect(body).toContain('<a href="/bin-day/qld">Queensland bin days</a>');
-    expect(body).toContain('<a href="/bin-day/qld/brisbane">Brisbane bin day</a>');
-    expect(body).toContain('<a href="/bin-day/vic/ballarat">Ballarat bin day</a>');
+    expect(body).toContain('<a href="/bin-days/qld">Queensland bin days</a>');
+    expect(body).toContain('<a href="/bin-days/qld/brisbane">Brisbane bin day</a>');
+    expect(body).toContain('<a href="/bin-days/vic/ballarat">Ballarat bin day</a>');
     expect(body).toContain('<script src="/assets/app.js"></script>'); // the UI still loads
   });
 
   it('gives each council its own page, title and data for the UI', async () => {
-    const { body } = await get('/bin-day/QLD/brisbane');
+    const { body } = await get('/bin-days/QLD/brisbane');
     expect(body).toContain('<title>Brisbane bin day: which bins go out this week?</title>');
     expect(body).toContain(
-      '<link rel="canonical" href="https://binday.test/bin-day/qld/brisbane" />',
+      '<link rel="canonical" href="https://binday.test/bin-days/qld/brisbane" />',
     );
     expect(body).toContain('<h1 class="hero-title">Brisbane bin day</h1>');
     expect(body).toContain('href="https://example.org/bins?a=1&amp;b=2"'); // escaped
@@ -77,14 +77,14 @@ describe('website pages', () => {
   });
 
   it('gives each state a page listing its councils', async () => {
-    const { body } = await get('/bin-day/VIC');
+    const { body } = await get('/bin-days/VIC');
     expect(body).toContain("<title>Victoria bin days: find your council's collection day</title>");
-    expect(body).toContain('<link rel="canonical" href="https://binday.test/bin-day/vic" />');
-    expect(body).toContain('<a href="/bin-day/vic/ballarat">Ballarat bin day</a>');
-    expect(body).not.toContain('/bin-day/qld/brisbane');
+    expect(body).toContain('<link rel="canonical" href="https://binday.test/bin-days/vic" />');
+    expect(body).toContain('<a href="/bin-days/vic/ballarat">Ballarat bin day</a>');
+    expect(body).not.toContain('/bin-days/qld/brisbane');
     expect(body).toContain('"state":"VIC"');
-    expect((await get('/bin-day/wa')).response.status).toBe(404); // no councils there
-    expect((await get('/bin-day/zz')).response.status).toBe(404);
+    expect((await get('/bin-days/wa')).response.status).toBe(404); // no councils there
+    expect((await get('/bin-days/zz')).response.status).toBe(404);
   });
 
   it('links a council to its state and its nearest neighbours', async () => {
@@ -112,17 +112,17 @@ describe('website pages', () => {
         feature('qld/near', 'Near City Council', 153.2, -27.7),
       ],
     });
-    const { body } = await get('/bin-day/qld/brisbane', { coverage });
+    const { body } = await get('/bin-days/qld/brisbane', { coverage });
     expect(body).toContain(
-      '<nav class="shell-trail"><a href="/">Bin Days</a> › <a href="/bin-day/qld">Queensland</a> › Brisbane bin day</nav>',
+      '<nav class="shell-trail"><a href="/">Bin Days</a> › <a href="/bin-days/qld">Queensland</a> › Brisbane bin day</nav>',
     );
-    const near = body.indexOf('/bin-day/qld/near');
+    const near = body.indexOf('/bin-days/qld/near');
     expect(near).toBeGreaterThan(-1);
-    expect(near).toBeLessThan(body.indexOf('/bin-day/qld/far')); // nearest first
+    expect(near).toBeLessThan(body.indexOf('/bin-days/qld/far')); // nearest first
     expect(body).toContain('"@type":"BreadcrumbList"');
 
     // The page still works when the boundary service is down.
-    const down = await get('/bin-day/qld/brisbane', {
+    const down = await get('/bin-days/qld/brisbane', {
       coverage: () => Promise.reject(new Error('down')),
     });
     expect(down.response.status).toBe(200);
@@ -130,13 +130,31 @@ describe('website pages', () => {
   });
 
   it('returns 404 for a council that is not supported', async () => {
-    expect((await get('/bin-day/qld/atlantis')).response.status).toBe(404);
+    expect((await get('/bin-days/qld/atlantis')).response.status).toBe(404);
   });
 
   it('still serves a readable page when the UI cannot be loaded', async () => {
     const { response, body } = await get('/', { loadShell: async () => undefined });
     expect(response.status).toBe(200);
     expect(body).toContain('<h1 class="hero-title">Which bins go out?</h1>');
+  });
+
+  it('opens a shared address link on that address, and keeps it out of search results', async () => {
+    const { body } = await get('/address/2/15+Example+Street,+Nerang+QLD');
+    expect(body).toContain('<title>Bin days for 2/15 Example Street, Nerang QLD</title>');
+    expect(body).toContain('"address":"2/15 Example Street, Nerang QLD"');
+    expect(body).toContain('<meta name="robots" content="noindex" />');
+    expect(body).not.toContain('rel="canonical"');
+    expect((await get('/sitemap.xml')).body).not.toContain('/address/');
+  });
+
+  it('sends the old page addresses, and the bare parent, somewhere real', async () => {
+    const old = await get('/bin-day/qld/brisbane');
+    expect(old.response.status).toBe(301);
+    expect(old.response.headers.get('location')).toBe('/bin-days/qld/brisbane');
+    for (const path of ['/bin-days', '/bin-day']) {
+      expect((await get(path)).response.headers.get('location')).toBe('/');
+    }
   });
 
   it('uses the configured site address for canonical links', async () => {
@@ -151,10 +169,10 @@ describe('files for crawlers and language models', () => {
     expect(sitemap.response.headers.get('content-type')).toContain('application/xml');
     expect([...sitemap.body.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1])).toEqual([
       'https://binday.test/',
-      'https://binday.test/bin-day/qld',
-      'https://binday.test/bin-day/vic',
-      'https://binday.test/bin-day/qld/brisbane',
-      'https://binday.test/bin-day/vic/ballarat',
+      'https://binday.test/bin-days/qld',
+      'https://binday.test/bin-days/vic',
+      'https://binday.test/bin-days/qld/brisbane',
+      'https://binday.test/bin-days/vic/ballarat',
     ]);
     expect((await get('/robots.txt')).body).toContain('Sitemap: https://binday.test/sitemap.xml');
   });
@@ -163,6 +181,6 @@ describe('files for crawlers and language models', () => {
     const { body } = await get('/llms.txt');
     expect(body).toMatch(/^# Bin Days\n\n> /);
     expect(body).toContain('https://binday.test/v1/collections?address=');
-    expect(body).toContain('- [City of Ballarat](https://binday.test/bin-day/vic/ballarat)');
+    expect(body).toContain('- [City of Ballarat](https://binday.test/bin-days/vic/ballarat)');
   });
 });

@@ -3,10 +3,12 @@ import {
   addDays,
   daysBetween,
   isLocalDate,
+  nextWeekday,
   parseAustralianDate,
   secondsUntilMidnight,
   today,
   weekday,
+  weekdayInWeekOf,
 } from '../../src/core/date.js';
 import { d } from '../helpers.js';
 
@@ -33,6 +35,17 @@ describe('dates', () => {
 
   it('knows the weekday', () => {
     expect(weekday(d('2026-11-13'))).toBe('Friday');
+  });
+
+  it('finds a weekday from today, and within a given week', () => {
+    expect(nextWeekday('Thursday ', d('2026-11-10'))).toBe('2026-11-12');
+    expect(nextWeekday('tue', d('2026-11-10'))).toBe('2026-11-10');
+    // Weeks run Monday to Sunday.
+    expect(weekdayInWeekOf('Monday', d('2026-11-15'))).toBe('2026-11-09');
+    expect(weekdayInWeekOf('Friday', d('2021-06-28'))).toBe('2021-07-02');
+    // No weekday is not Sunday.
+    expect(nextWeekday('', d('2026-11-10'))).toBeUndefined();
+    expect(weekdayInWeekOf('-', d('2026-11-10'))).toBeUndefined();
   });
 
   it("computes today in the council's timezone, not the server's", () => {

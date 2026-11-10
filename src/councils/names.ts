@@ -45,23 +45,55 @@ export function sourceDescription(council: {
     case 'intramaps':
       return `${council.name}'s online property map`;
     case 'arcgis-zones':
-      return `the collection zones ${council.name} publishes`;
+      return `the collection map ${council.name} publishes`;
     default:
       return `open data published for ${council.name}`;
   }
 }
 
-/** A state's page on the website, e.g. `/bin-day/qld`. */
-export const statePath = (state: string) => `/bin-day/${state.toLowerCase()}`;
+/** Where the state and council pages live. `/bin-days` itself leads to the home page's list. */
+export const PAGES_PATH = '/bin-days';
 
-/** A council's landing page on the website, e.g. `/bin-day/qld/brisbane`. */
-export const councilPath = (council: { id: string }) => `/bin-day/${council.id}`;
+/** A state's page on the website, e.g. `/bin-days/qld`. */
+export const statePath = (state: string) => `${PAGES_PATH}/${state.toLowerCase()}`;
+
+/** A council's landing page on the website, e.g. `/bin-days/qld/brisbane`. */
+export const councilPath = (council: { id: string }) => `${PAGES_PATH}/${council.id}`;
+
+const ADDRESS_PATH = '/address/';
+
+/** A link that looks an address up when opened, e.g. `/address/1+Example+Street,+Nerang+QLD`. */
+export const addressPath = (address: string) =>
+  ADDRESS_PATH +
+  encodeURIComponent(address.trim().replace(/\s+/g, ' '))
+    .replace(/%20/g, '+')
+    .replace(/%2C/g, ',')
+    .replace(/%2F/g, '/');
+
+/** The address an `addressPath` link carries, or nothing if the path isn't one. */
+export function addressFromPath(path: string): string | undefined {
+  if (!path.startsWith(ADDRESS_PATH)) return undefined;
+  try {
+    return (
+      decodeURIComponent(path.slice(ADDRESS_PATH.length).replace(/\+/g, ' ')).trim() || undefined
+    );
+  } catch {
+    return undefined; // a mangled link
+  }
+}
 
 /** The heading and one-line introduction of each kind of page, shared by the server and the UI so they match exactly. */
 export function pageHeading(page: {
   council?: { name: string } | undefined;
   state?: AustralianState | undefined;
+  address?: string | undefined;
 }): { title: string; lede: string } {
+  if (page.address) {
+    return {
+      title: 'Which bins go out?',
+      lede: `Bin days for ${page.address}, from the council's collection calendar.`,
+    };
+  }
   if (page.council) {
     return {
       title: `${shortCouncilName(page.council.name)} bin day`,
