@@ -8,13 +8,12 @@ import { MapPanel } from './MapPanel.js';
 
 interface HomeDirectoryProps {
   councils: CouncilLink[];
-  /** The council of the address just looked up, outlined on the map. */
-  highlight?: string | undefined;
-  pin?: { latitude: number; longitude: number } | undefined;
+  /** After a lookup the page is about one council, so this shrinks to a list without the map. */
+  compact?: boolean;
 }
 
 /** The home page's way in to the councils: search for one, or start from a state. */
-export function HomeDirectory({ councils, highlight, pin }: HomeDirectoryProps) {
+export function HomeDirectory({ councils, compact }: HomeDirectoryProps) {
   const [query, setQuery] = useState('');
   const words = query.trim().toLowerCase();
   const matches = words
@@ -26,15 +25,21 @@ export function HomeDirectory({ councils, highlight, pin }: HomeDirectoryProps) 
     <section id="coverage" className="coverage">
       <Stack gap={4} mb="lg">
         <Title order={2}>
-          {councils.length > 0
-            ? `${councils.length} councils across ${states.length} states and territories`
-            : 'Supported councils'}
+          {compact
+            ? 'Looking for somewhere else?'
+            : councils.length > 0
+              ? `${councils.length} councils across ${states.length} states and territories`
+              : 'Supported councils'}
         </Title>
-        <Text c="dimmed">Find your council for its bin days, or just type your address above.</Text>
+        <Text c="dimmed">
+          {compact
+            ? `Bin Days covers ${councils.length} councils. Search for one, or start from a state.`
+            : 'Find your council for its bin days, or just type your address above.'}
+        </Text>
       </Stack>
 
-      <div className="coverage-grid">
-        <MapPanel highlight={highlight} pin={pin} />
+      <div className={compact ? undefined : 'coverage-grid'}>
+        {!compact && <MapPanel />}
         <Stack gap="md">
           <TextInput
             aria-label="Search councils"

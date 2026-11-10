@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { z } from 'zod';
 import { formatStreetLine, matchesHouseNumber } from '../core/address.js';
 import { classifyBin, DEFAULT_COLOURS } from '../core/bin-types.js';
-import { addDays, parseAustralianDate, parseWeekday, weekdayIndex } from '../core/date.js';
+import { nextWeekday, parseAustralianDate } from '../core/date.js';
 import { addressNotFound, parseError, upstreamError } from '../core/errors.js';
 import { getJson, type HttpClient } from '../core/http.js';
 import { parseFrequency } from '../core/schedule.js';
@@ -175,7 +175,7 @@ export function parseOpenCitiesWasteServices(
       type === 'bulky'
         ? undefined
         : (parseFrequency(frequencyText) ?? parseFrequency(name) ?? parseFrequency(dateText));
-    const next = parseAustralianDate(dateText) ?? nextWeekday(dateText, everyDays, options.today);
+    const next = parseAustralianDate(dateText) ?? weekdayOnly(dateText, everyDays, options.today);
     if (!name || !next) return;
 
     const colour = options.colours?.[type] ?? DEFAULT_COLOURS[type];
@@ -198,11 +198,9 @@ export function parseOpenCitiesWasteServices(
  * pins the next date down; for a fortnightly one it doesn't say which week, so
  * it is left out.
  */
-function nextWeekday(text: string, everyDays?: number, today?: LocalDate): LocalDate | undefined {
+function weekdayOnly(text: string, everyDays?: number, today?: LocalDate): LocalDate | undefined {
   const [, every, name] = /^(every\s+)?([a-z]+day)$/i.exec(text) ?? [];
-  if (!today || !name || !(every || everyDays === 7)) return undefined;
-  const day = parseWeekday(name);
-  return day === undefined ? undefined : addDays(today, (day - weekdayIndex(today) + 7) % 7);
+  return today && name && (every || everyDays === 7) ? nextWeekday(name, today) : undefined;
 }
 
 /** An address line without its leading unit and house number, for comparing places. */

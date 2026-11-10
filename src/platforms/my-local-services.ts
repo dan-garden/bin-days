@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { classifyBin } from '../core/bin-types.js';
 import { addDays, compareDates, daysBetween, isLocalDate, weekdayIndex } from '../core/date.js';
-import { addressNotFound, invalidInput, parseError } from '../core/errors.js';
-import { getJson } from '../core/http.js';
+import { addressNotFound, invalidInput } from '../core/errors.js';
 import { expandRecurrence } from '../core/schedule.js';
 import type { BinService, LocalDate } from '../core/types.js';
 import type { CouncilAdapter, CouncilInfo } from '../councils/types.js';
+import { queryArcGisPoint } from './arcgis.js';
 
 /**
  * Adapter for South Australian councils, via the state's "My Local Services"
@@ -41,10 +41,6 @@ const Zone = z.object({
   Additional: z.string().nullish(),
 });
 
-const Zones = z.object({
-  features: z.array(z.object({ attributes: z.unknown() })).default([]),
-});
-
 /** The first collection on or after `today` for a zone's rule. Exported for tests. */
 export function nextZoneCollection(
   today: LocalDate,
@@ -77,28 +73,21 @@ export function createMyLocalServicesCouncil(info: Omit<CouncilInfo, 'platform'>
       if (latitude == null || longitude == null) {
         throw invalidInput(`${info.name} lookups need an address that can be located on a map`);
       }
-      const point = JSON.stringify({ x: longitude, y: latitude, spatialReference: { wkid: 4326 } });
-      const query = new URLSearchParams({
-        geometry: point,
-        geometryType: 'esriGeometryPoint',
-        inSR: '4326',
-        outFields: 'Waste_Type,Colour,Col_Day,Col_Freq,Col_Offset,Exclusion,Additional',
-        returnGeometry: 'false',
-        f: 'json',
-      });
       const layers = await Promise.all(
-        LAYERS.map(async (layer) => {
-          const url = `${SERVICE}/${layer}/query?${query}`;
-          const parsed = Zones.safeParse(await getJson(http, url));
-          if (!parsed.success) throw parseError(`Unexpected response for ${info.name}`, { url });
-          return parsed.data.features;
-        }),
+        LAYERS.map((layer) =>
+          queryArcGisPoint(
+            http,
+            `${SERVICE}/${layer}`,
+            { latitude, longitude },
+            'Waste_Type,Colour,Col_Day,Col_Freq,Col_Offset,Exclusion,Additional',
+          ),
+        ),
       );
 
       const services = new Map<string, BinService>();
-      for (const feature of layers.flat()) {
+      for (const attributes of layers.flatMap((layer) => layer.attributes)) {
         // A few zones are incomplete (no weekday, say); skip those rather than fail the lookup.
-        const { data: zone } = Zone.safeParse(feature.attributes);
+        const { data: zone } = Zone.safeParse(attributes);
         if (!zone) continue;
         const colour = zone.Colour?.trim().toLowerCase();
         const everyDays = zone.Col_Freq * 7;
@@ -136,7 +125,7 @@ export function createMyLocalServicesCouncil(info: Omit<CouncilInfo, 'platform'>
       return {
         matchedAddress: address.formatted ?? address.input,
         services: [...services.values()],
-        sourceUrl: `${SERVICE}/0/query?${query}`,
+        sourceUrl: layers[0]?.url ?? SERVICE,
       };
     },
   };

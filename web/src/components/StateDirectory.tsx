@@ -10,13 +10,12 @@ import { MapPanel } from './MapPanel.js';
 interface StateDirectoryProps {
   state: AustralianState;
   councils: CouncilLink[];
-  /** The council of the address just looked up, outlined on the map. */
-  highlight?: string | undefined;
-  pin?: { latitude: number; longitude: number } | undefined;
+  /** After a lookup the page is about one council, so this shrinks to a list without the map. */
+  compact?: boolean;
 }
 
 /** A state's page: its councils as links, beside a map of where they are. */
-export function StateDirectory({ state, councils, highlight, pin }: StateDirectoryProps) {
+export function StateDirectory({ state, councils, compact }: StateDirectoryProps) {
   const [query, setQuery] = useState('');
   const [hovered, setHovered] = useState<string>();
   const inState = councils.filter((c) => c.state === state);
@@ -36,8 +35,8 @@ export function StateDirectory({ state, councils, highlight, pin }: StateDirecto
         </Text>
       </Stack>
 
-      <div className="coverage-grid">
-        <MapPanel frame={inState.map((c) => c.id)} highlight={hovered ?? highlight} pin={pin} />
+      <div className={compact ? undefined : 'coverage-grid'}>
+        {!compact && <MapPanel frame={inState.map((c) => c.id)} highlight={hovered} />}
         <Stack gap="md">
           {inState.length > 12 && (
             <TextInput

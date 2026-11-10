@@ -40,6 +40,12 @@ export function sourceDescription(council: {
       return `${council.name}'s online collection calendar`;
     case 'opencities':
       return `${council.name}'s own website`;
+    case 'council-api':
+      return `${council.name}'s own bin day lookup`;
+    case 'intramaps':
+      return `${council.name}'s online property map`;
+    case 'arcgis-zones':
+      return `the collection zones ${council.name} publishes`;
     default:
       return `open data published for ${council.name}`;
   }

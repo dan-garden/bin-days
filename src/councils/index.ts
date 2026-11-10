@@ -1,6 +1,7 @@
 import { canberra } from './act/canberra.js';
 import { armidale } from './nsw/armidale.js';
 import { ballina } from './nsw/ballina.js';
+import { bathurst } from './nsw/bathurst.js';
 import { bayside } from './nsw/bayside.js';
 import { begaValley } from './nsw/bega-valley.js';
 import { bellingen } from './nsw/bellingen.js';
@@ -36,6 +37,7 @@ import { ryde } from './nsw/ryde.js';
 import { shoalhaven } from './nsw/shoalhaven.js';
 import { snowyValleys } from './nsw/snowy-valleys.js';
 import { strathfield } from './nsw/strathfield.js';
+import { sydney } from './nsw/sydney.js';
 import { theHills } from './nsw/the-hills.js';
 import { tweed } from './nsw/tweed.js';
 import { upperHunter } from './nsw/upper-hunter.js';
@@ -45,6 +47,7 @@ import { woollahra } from './nsw/woollahra.js';
 import { brisbane } from './qld/brisbane.js';
 import { bundaberg } from './qld/bundaberg.js';
 import { cassowaryCoast } from './qld/cassowary-coast.js';
+import { fraserCoast } from './qld/fraser-coast.js';
 import { gladstone } from './qld/gladstone.js';
 import { goldCoast } from './qld/gold-coast.js';
 import { gympie } from './qld/gympie.js';
@@ -103,11 +106,15 @@ import { whyalla } from './sa/whyalla.js';
 import { yankalilla } from './sa/yankalilla.js';
 import { yorkePeninsula } from './sa/yorke-peninsula.js';
 import { hobart } from './tas/hobart.js';
+import { launceston } from './tas/launceston.js';
 import type { CouncilAdapter } from './types.js';
 import { ballarat } from './vic/ballarat.js';
 import { banyule } from './vic/banyule.js';
 import { bawBaw } from './vic/baw-baw.js';
+import { baysideVic } from './vic/bayside.js';
 import { benalla } from './vic/benalla.js';
+import { cardinia } from './vic/cardinia.js';
+import { casey } from './vic/casey.js';
 import { colacOtway } from './vic/colac-otway.js';
 import { darebin } from './vic/darebin.js';
 import { glenelg } from './vic/glenelg.js';
@@ -129,6 +136,7 @@ import { mountAlexander } from './vic/mount-alexander.js';
 import { moyne } from './vic/moyne.js';
 import { murrindindi } from './vic/murrindindi.js';
 import { nillumbik } from './vic/nillumbik.js';
+import { portPhillip } from './vic/port-phillip.js';
 import { pyrenees } from './vic/pyrenees.js';
 import { stonnington } from './vic/stonnington.js';
 import { surfCoast } from './vic/surf-coast.js';
@@ -137,7 +145,15 @@ import { wangaratta } from './vic/wangaratta.js';
 import { wellington } from './vic/wellington.js';
 import { whittlesea } from './vic/whittlesea.js';
 import { yarraRanges } from './vic/yarra-ranges.js';
+import { bayswater } from './wa/bayswater.js';
 import { gosnells } from './wa/gosnells.js';
+import { joondalup } from './wa/joondalup.js';
+import { kwinana } from './wa/kwinana.js';
+import { mandurah } from './wa/mandurah.js';
+import { rockingham } from './wa/rockingham.js';
+import { serpentineJarrahdale } from './wa/serpentine-jarrahdale.js';
+import { southPerth } from './wa/south-perth.js';
+import { swan } from './wa/swan.js';
 
 /**
  * Every supported council. To add one, create `src/councils/<state>/<name>.ts`
@@ -147,6 +163,7 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   canberra,
   armidale,
   ballina,
+  bathurst,
   bayside,
   begaValley,
   bellingen,
@@ -182,6 +199,7 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   shoalhaven,
   snowyValleys,
   strathfield,
+  sydney,
   theHills,
   tweed,
   upperHunter,
@@ -191,6 +209,7 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   brisbane,
   bundaberg,
   cassowaryCoast,
+  fraserCoast,
   gladstone,
   goldCoast,
   gympie,
@@ -248,10 +267,14 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   yankalilla,
   yorkePeninsula,
   hobart,
+  launceston,
   ballarat,
   banyule,
   bawBaw,
+  baysideVic,
   benalla,
+  cardinia,
+  casey,
   colacOtway,
   darebin,
   glenelg,
@@ -273,6 +296,7 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   moyne,
   murrindindi,
   nillumbik,
+  portPhillip,
   pyrenees,
   stonnington,
   surfCoast,
@@ -281,7 +305,15 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   wellington,
   whittlesea,
   yarraRanges,
+  bayswater,
   gosnells,
+  joondalup,
+  kwinana,
+  mandurah,
+  rockingham,
+  serpentineJarrahdale,
+  southPerth,
+  swan,
 ];
 
 export function createDefaultRegistry(): CouncilRegistry {

@@ -27,6 +27,11 @@ const GREEN = '#2f9e44';
 const AREAS = ['coverage-fill', 'coverage-dot'];
 /** Room around whatever is framed; extra at the bottom, where the attribution sits. */
 const PADDING = { top: 40, right: 56, bottom: 76, left: 40 };
+/** On a phone-sized map there is no room to spare, and the attribution starts folded away. */
+const SMALL_PADDING = 28;
+const SMALL_MAP = 480;
+/** How close to show a looked-up address: its suburb and the streets around it. */
+const ADDRESS_ZOOM = 12;
 
 export interface CoverageMapProps {
   coverage: Coverage;
@@ -64,18 +69,27 @@ export default function CoverageMap({
   // Read the scheme straight away, so the map doesn't start light and then reload dark.
   const scheme = useComputedColorScheme('light', { getInitialValueInEffect: false });
   // The map outlives renders, so its event handlers read the latest props from here.
-  const latest = useRef({ coverage, frame, highlight, onSelect });
-  latest.current = { coverage, frame, highlight, onSelect };
+  const latest = useRef({ coverage, frame, highlight, onSelect, pin });
+  latest.current = { coverage, frame, highlight, onSelect, pin };
+  const padding = useRef<number | typeof PADDING>(PADDING);
 
   // Create the map once.
   // biome-ignore lint/correctness/useExhaustiveDependencies: later scheme changes are handled by the effect below.
   useEffect(() => {
     if (!container.current) return;
     const everything = frameBounds(latest.current.coverage, latest.current.frame);
+    const small = container.current.clientWidth < SMALL_MAP;
+    padding.current = small ? SMALL_PADDING : PADDING;
+    const at = latest.current.pin;
     const instance = new MapLibre({
       container: container.current,
       style: STYLES[scheme],
-      ...(everything ? { bounds: box(everything), fitBoundsOptions: { padding: PADDING } } : {}),
+      // Start where the map should be, an address or the framed councils, with no opening animation.
+      ...(at
+        ? { center: [at.longitude, at.latitude] as [number, number], zoom: ADDRESS_ZOOM }
+        : everything
+          ? { bounds: box(everything), fitBoundsOptions: { padding: padding.current } }
+          : {}),
       // Scrolling the page shouldn't zoom the map; zooming takes ctrl/two fingers.
       cooperativeGestures: true,
       attributionControl: {
@@ -84,6 +98,13 @@ export default function CoverageMap({
       },
     });
     map.current = instance;
+    if (small) {
+      instance.once('load', () => {
+        const attribution = container.current?.querySelector('.maplibregl-ctrl-attrib');
+        attribution?.classList.remove('maplibregl-compact-show');
+        attribution?.removeAttribute('open');
+      });
+    }
     instance.addControl(new NavigationControl({ showCompass: false }));
     // Shows where the viewer is, so they can see whether they're inside a supported area.
     instance.addControl(new GeolocateControl({}));
@@ -185,27 +206,36 @@ export default function CoverageMap({
     }
   }, [highlight]);
 
-  // Bring the framed councils into view when the frame changes.
-  const framed = frame?.join(',');
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `framed` stands in for `frame`, which is a new array each render.
-  useEffect(() => {
-    const area = frameBounds(coverage, frame);
-    if (area) map.current?.fitBounds(box(area), { padding: PADDING, maxZoom: 11, duration: 1200 });
-  }, [framed, coverage]);
-
-  // Drop a pin on the looked-up address and fly there. Runs after the effect
-  // above, so a lookup lands on the address rather than the whole frame.
+  // Mark the looked-up address.
   useEffect(() => {
     const instance = map.current;
     if (!instance || !pin) return;
     const marker = new Marker({ color: '#e03131' })
       .setLngLat([pin.longitude, pin.latitude])
       .addTo(instance);
-    instance.flyTo({ center: [pin.longitude, pin.latitude], zoom: 11, duration: 1800 });
     return () => {
       marker.remove();
     };
   }, [pin]);
+
+  // Move the map when what it should show changes: to the address if there is one, else to
+  // the framed councils. One movement, and none on first load, when the map starts in place.
+  const view = pin ? `${pin.longitude},${pin.latitude}` : `frame:${frame?.join(',')}`;
+  const shown = useRef(view);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `view` stands in for `pin` and `frame`.
+  useEffect(() => {
+    const instance = map.current;
+    if (!instance || shown.current === view) return;
+    shown.current = view;
+    if (pin) {
+      instance.flyTo({ center: [pin.longitude, pin.latitude], zoom: ADDRESS_ZOOM, duration: 1400 });
+      return;
+    }
+    const area = frameBounds(coverage, frame);
+    if (area) {
+      instance.fitBounds(box(area), { padding: padding.current, maxZoom: 11, duration: 1200 });
+    }
+  }, [view, coverage]);
 
   return <div ref={container} className="coverage-map" />;
 }

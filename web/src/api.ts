@@ -45,7 +45,9 @@ export const getCollections = (address: string, signal?: AbortSignal) =>
 export const getCouncils = () =>
   get<{ councils: CouncilInfo[] }>('/v1/councils').then((body) => body.councils);
 
-export const getCoverage = () => get<Coverage>('/v1/coverage');
+/** The coverage map. `councilCount` only makes the address change when a council is added. */
+export const getCoverage = (councilCount = 0) =>
+  get<Coverage>(`/v1/coverage?councils=${councilCount}`);
 
 /** What the server said about the page it served, e.g. which council's landing page this is. */
 export function pageData(): PageData {

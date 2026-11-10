@@ -33,18 +33,21 @@ import { ThemeToggle } from './components/ThemeToggle.js';
 const REMEMBERED = 'bin-days:address';
 const REPO = 'https://github.com/dan-garden/bin-days';
 
-function remembered(): string {
+/** The council that address turned out to be in, so it is only re-run where it belongs. */
+const REMEMBERED_COUNCIL = 'bin-days:council';
+
+function stored(key: string): string {
   try {
-    return localStorage.getItem(REMEMBERED) ?? '';
+    return localStorage.getItem(key) ?? '';
   } catch {
     return ''; // storage can be blocked, e.g. in private windows
   }
 }
 
-function remember(address: string) {
+function store(key: string, value: string) {
   try {
-    if (address) localStorage.setItem(REMEMBERED, address);
-    else localStorage.removeItem(REMEMBERED);
+    if (value) localStorage.setItem(key, value);
+    else localStorage.removeItem(key);
   } catch {}
 }
 
@@ -58,6 +61,16 @@ const page = pageData();
 
 /** The page's heading, and the trail back to the home page, for each kind of page. */
 const isHome = !page.council && !page.state;
+
+/**
+ * The remembered address, if this page is where a returning visitor would want
+ * it looked up again: the home page, or the page of the council it is in.
+ * Anywhere else they came to look at something different.
+ */
+function returningTo(): string {
+  const belongsHere = isHome || (!!page.council && stored(REMEMBERED_COUNCIL) === page.council.id);
+  return belongsHere ? stored(REMEMBERED) : '';
+}
 const heading = pageHeading(page);
 const trail: Array<{ name: string; href?: string }> = page.council
   ? [
@@ -75,7 +88,7 @@ type Lookup =
   | { status: 'failed'; error: ApiError };
 
 export function App() {
-  const [address, setAddress] = useState(remembered);
+  const [address, setAddress] = useState(returningTo);
   const [lookup, setLookup] = useState<Lookup>({ status: 'idle' });
   // The server puts the council list in the page; it is only fetched if that is missing.
   const [councils, setCouncils] = useState<CouncilLink[]>(page.councils ?? []);
@@ -86,12 +99,13 @@ export function App() {
     const controller = new AbortController();
     request.current = controller;
     // Remembered on submit only, never while typing.
-    remember(submitted);
+    store(REMEMBERED, submitted);
     setAddress(submitted);
     setLookup({ status: 'loading' });
     try {
       const result = await getCollections(submitted, controller.signal);
       setLookup({ status: 'done', result });
+      store(REMEMBERED_COUNCIL, result.council.id);
     } catch (error) {
       if (controller.signal.aborted) return;
       const failure =
@@ -102,7 +116,8 @@ export function App() {
 
   const clear = useCallback(() => {
     request.current?.abort();
-    remember('');
+    store(REMEMBERED, '');
+    store(REMEMBERED_COUNCIL, '');
     setAddress('');
     setLookup({ status: 'idle' });
   }, []);
@@ -114,8 +129,10 @@ export function App() {
   }, []);
 
   const located = lookup.status === 'done' ? lookup.result.address : undefined;
-  /** The council the looked-up address turned out to be in. */
-  const found = lookup.status === 'done' ? lookup.result.council.id : undefined;
+  // Once an address is looked up, the page is about that address's council. Before
+  // that it is about the council whose page this is, or about finding one.
+  const answered = lookup.status === 'done' ? lookup.result.council : undefined;
+  const council = answered ?? page.council;
   const pin = useMemo(
     () =>
       located?.latitude != null && located.longitude != null
@@ -227,7 +244,7 @@ export function App() {
             )}
             {lookup.status === 'done' && (
               <Suspense key={lookup.result.address.matched} fallback={null}>
-                <Result result={lookup.result} pageCouncil={page.council?.id} />
+                <Result result={lookup.result} />
               </Suspense>
             )}
             {lookup.status === 'failed' && (
@@ -243,12 +260,21 @@ export function App() {
           </AnimatePresence>
         </section>
 
-        {page.council ? (
-          <CouncilAbout council={page.council} nearby={page.nearby ?? []} pin={pin} />
-        ) : page.state ? (
-          <StateDirectory state={page.state} councils={councils} highlight={found} pin={pin} />
+        {council && (
+          <CouncilAbout
+            // A different council gets a fresh map rather than a flight across the country.
+            key={council.id}
+            council={council}
+            nearby={council.id === page.council?.id ? (page.nearby ?? []) : []}
+            pin={pin}
+          />
+        )}
+        {/* Browsing for a council: the whole section before a lookup, a short list after one.
+            A council's own page leaves it out and links to its state instead. */}
+        {page.state ? (
+          <StateDirectory state={page.state} councils={councils} compact={!!council} />
         ) : (
-          <HomeDirectory councils={councils} highlight={found} pin={pin} />
+          !page.council && <HomeDirectory councils={councils} compact={!!council} />
         )}
       </main>
 

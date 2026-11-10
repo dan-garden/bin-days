@@ -74,6 +74,12 @@ export function parseWeekday(name: string): number | undefined {
   return i === -1 ? undefined : i;
 }
 
+/** The first date on or after `today` that falls on the named weekday ("Thursday", "thu"). */
+export function nextWeekday(name: string, today: LocalDate): LocalDate | undefined {
+  const day = /^[a-z]{3,}/i.test(name.trim()) ? parseWeekday(name) : undefined;
+  return day === undefined ? undefined : addDays(today, (day - weekdayIndex(today) + 7) % 7);
+}
+
 /** Seconds left in the day in the given timezone. At least 60, so it can be used as a cache lifetime. */
 export function secondsUntilMidnight(timeZone: string, now: Date = new Date()): number {
   const [hours = 0, minutes = 0, seconds = 0] = new Intl.DateTimeFormat('en-GB', {

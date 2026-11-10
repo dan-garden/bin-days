@@ -69,6 +69,7 @@ describe('website pages', () => {
         website: 'https://example.org/bins?a=1&b=2',
       },
       nearby: [],
+      councilCount: 2,
     });
     for (const block of body.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)) {
       expect(JSON.parse(block[1] ?? '')['@context']).toBe('https://schema.org');

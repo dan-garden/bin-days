@@ -1,6 +1,5 @@
 import { Anchor, Badge, Group, Paper, Stack, Text, Title, Tooltip } from '@mantine/core';
 import { m } from 'motion/react';
-import { councilPath } from '../../../src/councils/names.js';
 import type { Bin, BinDaysResult, CollectionDay, ServiceSummary } from '../api.js';
 import { daysUntil, formatDate, relativeDay } from '../lib.js';
 import { BinIcon } from './BinIcon.js';
@@ -17,13 +16,7 @@ const rise = {
   shown: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24 } },
 } as const;
 
-interface ResultProps {
-  result: BinDaysResult;
-  /** The council whose page this is, if any, so the result doesn't link to the page it is on. */
-  pageCouncil?: string | undefined;
-}
-
-export function Result({ result, pageCouncil }: ResultProps) {
+export function Result({ result }: { result: BinDaysResult }) {
   const { next, today, council, address } = result;
   const later = result.days.filter((day) => day.date !== next?.date);
   const estimated = result.days.some((day) => day.bins.some((b) => b.confidence === 'projected'));
@@ -38,16 +31,9 @@ export function Result({ result, pageCouncil }: ResultProps) {
       <Stack gap="lg">
         <m.div variants={rise}>
           <Text c="dimmed" size="sm">
-            {address.matched} ·{' '}
-            {council.id === pageCouncil ? (
-              council.name
-            ) : (
-              <Anchor href={councilPath(council)} inherit>
-                {council.name}
-              </Anchor>
-            )}
+            {address.matched} · {council.name}
             {' · '}
-            <Anchor href="#coverage" inherit>
+            <Anchor href="#area" inherit>
               Show on map
             </Anchor>
           </Text>

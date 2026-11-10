@@ -2,7 +2,7 @@ import { Skeleton, Text } from '@mantine/core';
 import { useInViewport } from '@mantine/hooks';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { councilPath } from '../../../src/councils/names.js';
-import { type Coverage, getCoverage } from '../api.js';
+import { type Coverage, getCoverage, pageData } from '../api.js';
 import type { CoverageMapProps } from './CoverageMap.js';
 
 // The map library is by far the biggest thing on the page, so it loads only when needed.
@@ -24,7 +24,7 @@ export function MapPanel(props: MapPanelProps) {
     if (inViewport && ready) setWanted(true);
   }, [inViewport, ready]);
   useEffect(() => {
-    if (wanted) getCoverage().then(setCoverage, () => setFailed(true));
+    if (wanted) getCoverage(pageData().councilCount).then(setCoverage, () => setFailed(true));
   }, [wanted]);
 
   return (

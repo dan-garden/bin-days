@@ -55,6 +55,9 @@ export interface PageData {
   nearby?: CouncilLink[];
   /** Every supported council, on the pages that list them, so the UI needn't fetch them. */
   councils?: CouncilLink[];
+  /** How many councils are supported. The UI asks for the coverage map by this number, so a
+   * browser's saved copy is not reused once a council has been added. */
+  councilCount?: number;
 }
 
 const escapeHtml = (text: string) =>
@@ -80,7 +83,7 @@ interface Page {
   body: string[];
 }
 
-function renderPage(shell: string, origin: string, page: Page): string {
+function renderPage(shell: string, origin: string, page: Page, councilCount: number): string {
   const url = origin + page.path;
   const meta = (attribute: string, name: string, content: string) =>
     `<meta ${attribute}="${name}" content="${escapeHtml(content)}" />`;
@@ -135,7 +138,7 @@ function renderPage(shell: string, origin: string, page: Page): string {
     ...structuredData.map(
       (item) => `<script type="application/ld+json">${scriptJson(item)}</script>`,
     ),
-    `<script id="page-data" type="application/json">${scriptJson(page.data)}</script>`,
+    `<script id="page-data" type="application/json">${scriptJson({ ...page.data, councilCount })}</script>`,
   ].join('\n    ');
   const trail =
     page.trail.length > 1
@@ -333,7 +336,7 @@ export function addSiteRoutes(
     const shell = (await loadShell(new URL(c.req.url).origin)) ?? BARE_SHELL;
     // Browsers always revalidate (a new deploy changes the script names); the CDN keeps it an hour.
     c.header('cache-control', 'public, max-age=0, s-maxage=3600');
-    return c.html(renderPage(shell, origin(c), page));
+    return c.html(renderPage(shell, origin(c), page, registry.list().length));
   };
   const text = (c: Context, body: string, type: string) => {
     c.header('cache-control', 'public, max-age=3600, s-maxage=3600');

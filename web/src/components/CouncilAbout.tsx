@@ -11,17 +11,18 @@ import { MapPanel } from './MapPanel.js';
 import { Outbound } from './Outbound.js';
 
 interface CouncilAboutProps {
+  /** The council whose page this is, or the one a looked-up address is in. */
   council: NonNullable<PageData['council']>;
   nearby: NonNullable<PageData['nearby']>;
   pin?: { latitude: number; longitude: number } | undefined;
 }
 
-/** A council's page: the area it covers, where its dates come from, and the councils around it. */
+/** About one council: the area it covers, where its dates come from, and the councils around it. */
 export function CouncilAbout({ council, nearby, pin }: CouncilAboutProps) {
   const place = shortCouncilName(council.name);
   const state = STATE_NAMES[council.state];
   return (
-    <section id="coverage" className="coverage">
+    <section id="area" className="coverage">
       <Title order={2} mb="lg">
         Bin collection in {place}
       </Title>
