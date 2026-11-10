@@ -1,0 +1,377 @@
+/* Page-level styling. Components come from Mantine; this file is layout, the bins and the mood. */
+
+:root {
+  --bin-body: #2f3b36;
+  --bin-wheel: #1b1f1d;
+  --page: #f5f7f1;
+  --card: rgb(255 255 255 / 0.78);
+  --card-border: rgb(20 40 30 / 0.08);
+  --glow-1: rgb(130 201 30 / 0.28);
+  --glow-2: rgb(252 196 25 / 0.24);
+  --glow-3: rgb(224 49 49 / 0.1);
+}
+
+[data-mantine-color-scheme="dark"] {
+  --bin-body: #4a5a53;
+  --bin-wheel: #0c0f0e;
+  --page: #0f1412;
+  --card: rgb(28 36 32 / 0.72);
+  --card-border: rgb(255 255 255 / 0.08);
+  --glow-1: rgb(130 201 30 / 0.13);
+  --glow-2: rgb(252 196 25 / 0.08);
+  --glow-3: rgb(224 49 49 / 0.07);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--page);
+}
+
+/* Soft lid-coloured light behind everything. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60rem 36rem at 8% -8%, var(--glow-1), transparent 60%),
+    radial-gradient(48rem 32rem at 100% 0%, var(--glow-2), transparent 62%),
+    radial-gradient(50rem 30rem at 50% 110%, var(--glow-3), transparent 60%);
+}
+
+.page {
+  padding-block: 1.25rem 3rem;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Hero */
+
+.hero {
+  padding-block: clamp(2.5rem, 9vw, 5.5rem) 2rem;
+  text-align: center;
+}
+
+.hero-bins {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 8vw, 4.75rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.hero-lede {
+  font-size: clamp(1.05rem, 2.4vw, 1.3rem);
+  margin: 0.9rem auto 1.75rem;
+  max-width: 34rem;
+}
+
+/* The address field: one rounded bar holding the pin, the input and the button. */
+
+.address-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 40rem;
+  margin-inline: auto;
+  padding: 0.4rem 0.4rem 0.4rem 1.1rem;
+  border-radius: 999px;
+  background: var(--mantine-color-body);
+  border: 1px solid var(--card-border);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.05),
+    0 12px 32px -12px rgb(20 60 30 / 0.28);
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s;
+}
+
+.address-form:focus-within {
+  border-color: var(--mantine-primary-color-filled);
+  box-shadow:
+    0 0 0 4px rgb(47 158 68 / 0.18),
+    0 12px 32px -12px rgb(20 60 30 / 0.28);
+}
+
+.address-pin {
+  flex: none;
+  fill: none;
+  stroke: var(--mantine-color-dimmed);
+  stroke-width: 1.8;
+}
+
+.address-input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 30em) {
+  .address-form {
+    flex-wrap: wrap;
+    border-radius: 1.5rem;
+    padding: 0.5rem 0.6rem 0.6rem 0.9rem;
+  }
+
+  .address-form button[type="submit"] {
+    width: 100%;
+  }
+}
+
+/* Result */
+
+.result {
+  max-width: 46rem;
+  margin: 0 auto;
+  min-height: 1rem;
+}
+
+.next-card,
+.coverage-map-frame,
+.day-row,
+.service-chip {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(10px);
+}
+
+.next-card {
+  box-shadow: 0 24px 60px -30px rgb(20 60 30 / 0.4);
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mantine-primary-color-filled);
+}
+
+[data-mantine-color-scheme="dark"] .eyebrow {
+  color: var(--mantine-color-green-4);
+}
+
+.next-when {
+  font-size: clamp(2.25rem, 7vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.next-bin {
+  max-width: 7.5rem;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.day-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 1.1rem;
+}
+
+.day-date {
+  flex: none;
+  width: 3.25rem;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.day-number {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.day-bins {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.service-chip {
+  padding: 0.45rem 0.9rem 0.45rem 0.55rem;
+  border-radius: 999px;
+}
+
+.estimated {
+  cursor: help;
+}
+
+/* Bins */
+
+.bin-icon {
+  flex: none;
+  overflow: visible;
+  /* Tapping a bin opens its lid; don't flash a highlight box or wait for a double-tap. */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.bin-shadow {
+  fill: rgb(0 0 0 / 0.14);
+}
+
+.bin-body {
+  fill: var(--bin-body);
+}
+
+.bin-wheel {
+  fill: var(--bin-wheel);
+}
+
+.bin-hub {
+  fill: #868e96;
+}
+
+.bin-ribs {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.13);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.bin-lip {
+  fill: rgb(0 0 0 / 0.16);
+}
+
+.bin-shine {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.4);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.bin-mark {
+  fill: #fff;
+  stroke: #fff;
+  opacity: 0.92;
+}
+
+.bin-mark-cut {
+  fill: none;
+  stroke: var(--bin-body);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.bin-armchair {
+  fill: #b08968;
+}
+
+.bin-armchair-seat {
+  fill: #ddb892;
+}
+
+.bin-armchair-legs {
+  fill: none;
+  stroke: #7f5539;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* Councils and the map */
+
+.coverage {
+  margin-top: clamp(3rem, 9vw, 6rem);
+  scroll-margin-top: 1.5rem;
+}
+
+.coverage-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.coverage-map-frame {
+  position: sticky;
+  top: 1rem;
+  height: 30rem;
+  border-radius: 1.5rem;
+  overflow: hidden;
+}
+
+.coverage-map {
+  height: 100%;
+  font-family: inherit;
+}
+
+@media (max-width: 48em) {
+  .coverage-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .coverage-map-frame {
+    position: static;
+    height: 21rem;
+  }
+}
+
+.council-chip {
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.council-chip:hover {
+  border-color: var(--mantine-primary-color-filled);
+}
+
+.council-chip:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+.council-chip[aria-pressed="true"] {
+  background: var(--mantine-primary-color-filled);
+  border-color: var(--mantine-primary-color-filled);
+  color: #fff;
+}
+
+/* The map library's popup, restyled to match. */
+.coverage-map .maplibregl-popup-content {
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.6rem;
+  font-weight: 600;
+  color: #1d2521;
+}
+
+.footer {
+  margin-top: 4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--card-border);
+  max-width: 40rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
