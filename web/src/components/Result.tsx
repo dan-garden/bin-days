@@ -1,5 +1,7 @@
 import { Anchor, Badge, Group, Paper, Stack, Text, Title, Tooltip } from '@mantine/core';
 import { m } from 'motion/react';
+import { useState } from 'react';
+import { addressPath } from '../../../src/councils/names.js';
 import type { Bin, BinDaysResult, CollectionDay, ServiceSummary } from '../api.js';
 import { daysUntil, formatDate, relativeDay } from '../lib.js';
 import { BinIcon } from './BinIcon.js';
@@ -36,6 +38,8 @@ export function Result({ result }: { result: BinDaysResult }) {
             <Anchor href="#area" inherit>
               Show on map
             </Anchor>
+            {' · '}
+            <ShareLink address={address.input} />
           </Text>
         </m.div>
 
@@ -86,6 +90,27 @@ export function Result({ result }: { result: BinDaysResult }) {
         </m.div>
       </Stack>
     </m.div>
+  );
+}
+
+/** Hands the address's link to the phone's share sheet, or copies it where there isn't one. */
+function ShareLink({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false);
+  const path = addressPath(address);
+  const share = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    const url = location.origin + path;
+    try {
+      if (navigator.share) return await navigator.share({ title: 'Bin Days', url });
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {} // the visitor closed the share sheet
+  };
+  return (
+    <Anchor href={path} inherit onClick={share}>
+      {copied ? 'Link copied' : 'Share'}
+    </Anchor>
   );
 }
 

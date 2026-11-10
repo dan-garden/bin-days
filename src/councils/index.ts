@@ -10,6 +10,8 @@ import { blueMountains } from './nsw/blue-mountains.js';
 import { burwood } from './nsw/burwood.js';
 import { campbelltown } from './nsw/campbelltown.js';
 import { canadaBay } from './nsw/canada-bay.js';
+import { canterburyBankstown } from './nsw/canterbury-bankstown.js';
+import { centralCoast } from './nsw/central-coast.js';
 import { cessnock } from './nsw/cessnock.js';
 import { clarenceValley } from './nsw/clarence-valley.js';
 import { coffsHarbour } from './nsw/coffs-harbour.js';
@@ -29,6 +31,8 @@ import { lithgow } from './nsw/lithgow.js';
 import { liverpool } from './nsw/liverpool.js';
 import { midCoast } from './nsw/mid-coast.js';
 import { moreePlains } from './nsw/moree-plains.js';
+import { newcastle } from './nsw/newcastle.js';
+import { northernBeaches } from './nsw/northern-beaches.js';
 import { penrith } from './nsw/penrith.js';
 import { portMacquarieHastings } from './nsw/port-macquarie-hastings.js';
 import { portStephens } from './nsw/port-stephens.js';
@@ -57,6 +61,7 @@ import { mackay } from './qld/mackay.js';
 import { moretonBay } from './qld/moreton-bay.js';
 import { redland } from './qld/redland.js';
 import { southBurnett } from './qld/south-burnett.js';
+import { sunshineCoast } from './qld/sunshine-coast.js';
 import { CouncilRegistry } from './registry.js';
 import { adelaide } from './sa/adelaide.js';
 import { adelaideHills } from './sa/adelaide-hills.js';
@@ -127,9 +132,11 @@ import { macedonRanges } from './vic/macedon-ranges.js';
 import { maribyrnong } from './vic/maribyrnong.js';
 import { maroondah } from './vic/maroondah.js';
 import { melton } from './vic/melton.js';
+import { merriBek } from './vic/merri-bek.js';
 import { mildura } from './vic/mildura.js';
 import { moira } from './vic/moira.js';
 import { monash } from './vic/monash.js';
+import { mooneeValley } from './vic/moonee-valley.js';
 import { moorabool } from './vic/moorabool.js';
 import { morningtonPeninsula } from './vic/mornington-peninsula.js';
 import { mountAlexander } from './vic/mount-alexander.js';
@@ -144,15 +151,20 @@ import { swanHill } from './vic/swan-hill.js';
 import { wangaratta } from './vic/wangaratta.js';
 import { wellington } from './vic/wellington.js';
 import { whittlesea } from './vic/whittlesea.js';
+import { yarra } from './vic/yarra.js';
 import { yarraRanges } from './vic/yarra-ranges.js';
+import { bassendean } from './wa/bassendean.js';
 import { bayswater } from './wa/bayswater.js';
+import { belmont } from './wa/belmont.js';
 import { gosnells } from './wa/gosnells.js';
 import { joondalup } from './wa/joondalup.js';
+import { kalamunda } from './wa/kalamunda.js';
 import { kwinana } from './wa/kwinana.js';
 import { mandurah } from './wa/mandurah.js';
 import { rockingham } from './wa/rockingham.js';
 import { serpentineJarrahdale } from './wa/serpentine-jarrahdale.js';
 import { southPerth } from './wa/south-perth.js';
+import { stirling } from './wa/stirling.js';
 import { swan } from './wa/swan.js';
 
 /**
@@ -160,6 +172,7 @@ import { swan } from './wa/swan.js';
  * (usually a few lines using a platform adapter) and add it here.
  */
 export const ALL_COUNCILS: readonly CouncilAdapter[] = [
+  stirling,
   canberra,
   armidale,
   ballina,
@@ -172,6 +185,8 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   burwood,
   campbelltown,
   canadaBay,
+  canterburyBankstown,
+  centralCoast,
   cessnock,
   clarenceValley,
   coffsHarbour,
@@ -191,6 +206,8 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   liverpool,
   midCoast,
   moreePlains,
+  newcastle,
+  northernBeaches,
   penrith,
   portMacquarieHastings,
   portStephens,
@@ -219,6 +236,7 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   moretonBay,
   redland,
   southBurnett,
+  sunshineCoast,
   adelaide,
   adelaideHills,
   adelaidePlains,
@@ -287,9 +305,11 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   maribyrnong,
   maroondah,
   melton,
+  merriBek,
   mildura,
   moira,
   monash,
+  mooneeValley,
   moorabool,
   morningtonPeninsula,
   mountAlexander,
@@ -304,10 +324,14 @@ export const ALL_COUNCILS: readonly CouncilAdapter[] = [
   wangaratta,
   wellington,
   whittlesea,
+  yarra,
   yarraRanges,
+  bassendean,
   bayswater,
+  belmont,
   gosnells,
   joondalup,
+  kalamunda,
   kwinana,
   mandurah,
   rockingham,

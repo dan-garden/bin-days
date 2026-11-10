@@ -56,11 +56,13 @@ const Result = lazy(() =>
   import('./components/Result.js').then((module) => ({ default: module.Result })),
 );
 
-/** Set when this is a council's landing page, e.g. `/bin-day/qld/brisbane`. */
+/** Set when this is a council's landing page, e.g. `/bin-days/qld/brisbane`. */
 const page = pageData();
 
 /** The page's heading, and the trail back to the home page, for each kind of page. */
 const isHome = !page.council && !page.state;
+/** A shared link names its own address, which is looked up without replacing the visitor's own. */
+const shared = page.address;
 
 /**
  * The remembered address, if this page is where a returning visitor would want
@@ -88,24 +90,24 @@ type Lookup =
   | { status: 'failed'; error: ApiError };
 
 export function App() {
-  const [address, setAddress] = useState(returningTo);
+  const [address, setAddress] = useState(shared ?? returningTo);
   const [lookup, setLookup] = useState<Lookup>({ status: 'idle' });
   // The server puts the council list in the page; it is only fetched if that is missing.
   const [councils, setCouncils] = useState<CouncilLink[]>(page.councils ?? []);
   const request = useRef<AbortController>(null);
 
-  const find = useCallback(async (submitted: string) => {
+  const find = useCallback(async (submitted: string, remember = true) => {
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
     // Remembered on submit only, never while typing.
-    store(REMEMBERED, submitted);
+    if (remember) store(REMEMBERED, submitted);
     setAddress(submitted);
     setLookup({ status: 'loading' });
     try {
       const result = await getCollections(submitted, controller.signal);
       setLookup({ status: 'done', result });
-      store(REMEMBERED_COUNCIL, result.council.id);
+      if (remember) store(REMEMBERED_COUNCIL, result.council.id);
     } catch (error) {
       if (controller.signal.aborted) return;
       const failure =
@@ -124,7 +126,7 @@ export function App() {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs once, for the address remembered from last time.
   useEffect(() => {
-    if (address) find(address);
+    if (address) find(address, !shared);
     if (!page.councils && !page.council) getCouncils().then(setCouncils, () => {});
   }, []);
 
