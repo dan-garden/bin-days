@@ -1,4 +1,3 @@
-import { stirling } from './wa/stirling.js';
 import { canberra } from './act/canberra.js';
 import { armidale } from './nsw/armidale.js';
 import { ballina } from './nsw/ballina.js';
@@ -63,6 +62,7 @@ import { moretonBay } from './qld/moreton-bay.js';
 import { redland } from './qld/redland.js';
 import { southBurnett } from './qld/south-burnett.js';
 import { sunshineCoast } from './qld/sunshine-coast.js';
+import { CouncilRegistry } from './registry.js';
 import { adelaide } from './sa/adelaide.js';
 import { adelaideHills } from './sa/adelaide-hills.js';
 import { adelaidePlains } from './sa/adelaide-plains.js';
@@ -112,6 +112,7 @@ import { yankalilla } from './sa/yankalilla.js';
 import { yorkePeninsula } from './sa/yorke-peninsula.js';
 import { hobart } from './tas/hobart.js';
 import { launceston } from './tas/launceston.js';
+import type { CouncilAdapter } from './types.js';
 import { ballarat } from './vic/ballarat.js';
 import { banyule } from './vic/banyule.js';
 import { bawBaw } from './vic/baw-baw.js';
@@ -163,9 +164,8 @@ import { mandurah } from './wa/mandurah.js';
 import { rockingham } from './wa/rockingham.js';
 import { serpentineJarrahdale } from './wa/serpentine-jarrahdale.js';
 import { southPerth } from './wa/south-perth.js';
+import { stirling } from './wa/stirling.js';
 import { swan } from './wa/swan.js';
-import { CouncilRegistry } from './registry.js';
-import type { CouncilAdapter } from './types.js';
 
 /**
  * Every supported council. To add one, create `src/councils/<state>/<name>.ts`

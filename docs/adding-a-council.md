@@ -16,7 +16,7 @@ Open the council's "find my bin day" page with your browser's developer tools on
 | Opendatasoft      | A data portal with `/api/explore/v2.1/` addresses                      | `src/councils/qld/brisbane.ts`  |
 | My Local Services | The council is in South Australia and listed in the state's My Local Services app | `src/councils/sa/robe.ts` |
 | IntraMaps | The council's "find my bin day" opens a map on `*.spatial.t1cloud.com` or a path containing `IntraMaps` | `src/councils/wa/swan.ts` |
-| ArcGIS zones with dates | A map layer (`.../FeatureServer/0`) whose zones carry a date per bin | `src/councils/tas/launceston.ts` |
+| ArcGIS map layer | A map layer (`.../FeatureServer/0`) of zones or properties, with a date or a weekday per bin | `src/councils/tas/launceston.ts` (dates), `src/councils/nsw/newcastle.ts` (weekday and week), `src/councils/vic/moonee-valley.ts` (found by address) |
 
 Council sites often refuse requests that look anonymous or pretend to be a browser, but answer ones that say who they are. The app sends an identifying `User-Agent` (see `BIN_DAYS_USER_AGENT`); test with that, and if a site still refuses, leave it alone rather than work around it.
 
@@ -50,7 +50,13 @@ Otherwise implement `CouncilAdapter`, as `src/councils/qld/brisbane.ts` does. It
 
 For an IntraMaps council, `readIntraMapsPanel` in `src/platforms/intramaps.ts` returns every field of a property's panel, which shows which fields are bins and how the council words them.
 
-A source that only gives a weekday and "week 1 or 2" is not enough: a week number means nothing without a date to count from, and guessing it tells people the wrong bin. Add such a council only with a date checked against its own calendar.
+A source that only gives a weekday and "week 1 or 2" is not enough on its own: a week number means nothing without a date to count from, and guessing it tells people the wrong bin. Add such a council only with a date from the council itself, and say in the file where it came from. Three places have had one:
+
+- the council's public ArcGIS map, whose pop-up formula often names the date it counts from (search the council's maps on arcgis.com and read the web map's `expressionInfos`);
+- the script behind the council's own bin day page;
+- the council's printed calendar.
+
+`weekdayInWeekOf` in `src/core/date.ts` turns a weekday and a date in the right week into a collection date, and `binService` in `src/core/schedule.ts` builds a bin from a date and a cycle.
 
 If you find a platform that several councils share, put it in `src/platforms/` so each of those councils becomes a few lines.
 

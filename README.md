@@ -39,6 +39,8 @@ npm run cli -- "833 Southport Nerang Road, Nerang QLD"
 | `GET /v1/councils`                   | The councils supported so far                   |
 | `GET /v1/coverage`                   | A map (GeoJSON) of the areas those councils cover |
 
+On the website, `/address/<address>` opens straight on that address's bins, so a result can be shared as a link.
+
 `/v1/collections` also takes `date=YYYY-MM-DD`, or `from` and `to` for a range. Without them you get the next two weeks.
 
 ```jsonc
@@ -62,7 +64,7 @@ The full reference, with every field and error, is the interactive documentation
 
 ## Where it works
 
-154 councils so far, in every state and the ACT.
+166 councils so far, in every state and the ACT.
 
 ## Project layout
 

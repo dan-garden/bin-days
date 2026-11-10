@@ -43,6 +43,20 @@ describe('Stirling adapter', () => {
     ]);
   });
 
+  it('looks to each side when the point is on the road, and needs the sides to agree', async () => {
+    // Nothing at the point itself; houses to the north and south.
+    const sides = (south: unknown) =>
+      fakeHttp((_, init) => {
+        const [, latitude] = (new Headers(init?.headers).get('fields') ?? '').split(',');
+        return json(latitude === '-31.902' ? nowhere : Number(latitude) > -31.902 ? house : south);
+      });
+    const schedule = await stirling.getSchedule(address, ctx(sides(house)));
+    expect(schedule.services).toHaveLength(4);
+    await expect(
+      stirling.getSchedule(address, ctx(sides([row('Red', 'Nov 12 2026 ')]))),
+    ).rejects.toMatchObject({ code: 'ADDRESS_NOT_FOUND' });
+  });
+
   it('reports a point with no collection', async () => {
     await expect(
       stirling.getSchedule(address, ctx(fakeHttp(() => json(nowhere)))),

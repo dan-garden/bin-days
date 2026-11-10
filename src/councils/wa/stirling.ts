@@ -8,7 +8,8 @@ import type { CouncilAdapter } from '../types.js';
 /**
  * City of Stirling, via the lookup behind the council's bin collections page.
  * It takes a location and returns each bin's next date. The property is found
- * by its coordinates, so it needs a geocoded address.
+ * by its coordinates, so it needs a geocoded address, and a point on the wrong
+ * property gets that property's days.
  */
 const URL = 'https://www.stirling.wa.gov.au/bincollectioncheck/getresult';
 /** Which of the council's lookups to run, as its own page asks for it. */
@@ -28,6 +29,14 @@ const BINS: Record<string, { type: BinType; name: string; everyDays?: number }> 
 
 type Field = { name: string; value: unknown };
 
+/** Steps of about 30 metres north and east, in degrees. */
+const NEARBY = [
+  [0.0003, 0],
+  [-0.0003, 0],
+  [0, 0.0003],
+  [0, -0.0003],
+] as const;
+
 export const stirling: CouncilAdapter = {
   id: 'wa/stirling',
   name: 'City of Stirling',
@@ -43,19 +52,35 @@ export const stirling: CouncilAdapter = {
     if (latitude == null || longitude == null) {
       throw invalidInput('City of Stirling lookups need an address that can be located on a map');
     }
-    const answer = await getJson<Field[][] | string>(http, URL, {
-      headers: { ...LOOKUP, fields: `${longitude},${latitude}` },
-    });
-    // The answer arrives either as JSON or as JSON inside a string.
-    const rows: Field[][] = typeof answer === 'string' ? JSON.parse(answer) : answer;
+    const read = async (lat: number, lon: number) => {
+      const answer = await getJson<Field[][] | string>(http, URL, {
+        headers: { ...LOOKUP, fields: `${lon},${lat}` },
+      });
+      // The answer arrives either as JSON or as JSON inside a string.
+      const rows: Field[][] = typeof answer === 'string' ? JSON.parse(answer) : answer;
+      const services: BinService[] = [];
+      for (const row of Array.isArray(rows) ? rows : []) {
+        const value = (name: string) =>
+          String(row.find((field) => field.name === name)?.value ?? '');
+        const bin = BINS[value('type')];
+        // Mostly written "Nov 10 2026"; the parser wants the day first.
+        const date = parseAustralianDate(value('date').replace(/^([A-Za-z]+)\s+(\d+)/, '$2 $1'));
+        if (bin && date) services.push(binService(bin.type, bin.name, date, bin.everyDays));
+      }
+      // On a road only the verge collection comes back, which is no property's answer.
+      return services.some((service) => service.type === 'general') ? services : [];
+    };
 
-    const services: BinService[] = [];
-    for (const row of Array.isArray(rows) ? rows : []) {
-      const value = (name: string) => String(row.find((field) => field.name === name)?.value ?? '');
-      const bin = BINS[value('type')];
-      // Mostly written "Nov 10 2026"; the parser wants the day first.
-      const date = parseAustralianDate(value('date').replace(/^([A-Za-z]+)\s+(\d+)/, '$2 $1'));
-      if (bin && date) services.push(binService(bin.type, bin.name, date, bin.everyDays));
+    let services = await read(latitude, longitude);
+    if (!services.length) {
+      // The council only answers inside a property, and geocoders often put an address on the
+      // road. So ask about 30 m to each side, and take the answer only if the properties
+      // found there all agree.
+      const around = await Promise.all(
+        NEARBY.map(([north, east]) => read(latitude + north, longitude + east)),
+      );
+      const found = around.filter((nearby) => nearby.length);
+      if (new Set(found.map((nearby) => JSON.stringify(nearby))).size === 1) services = found[0]!;
     }
     if (!services.length) {
       throw addressNotFound(`City of Stirling has no kerbside collection at "${address.input}"`);

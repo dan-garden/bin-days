@@ -14,8 +14,10 @@ const row = {
   zone: 'A',
   yellowZone: null,
 };
-const bins = (changes: Partial<typeof row>) =>
-  binsFor({ ...row, ...changes }, d('2026-11-10')).map((s) => [s.name, s.recurrence]);
+const bins = (changes: Partial<Record<keyof typeof row, string | null>>) =>
+  binsFor({ ...row, ...changes } as Parameters<typeof binsFor>[0], d('2026-11-10')).map(
+    (s) => [s.name, s.recurrence] as const,
+  );
 
 describe("Canterbury Bankstown's collection patterns", () => {
   it('alternates recycling and garden for a house, by its area', () => {
