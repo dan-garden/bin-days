@@ -1,0 +1,58 @@
+# Adding a council
+
+## 1. Find where its bin days come from
+
+Open the council's "find my bin day" page with your browser's developer tools on the Network tab, and look up an address. In order of preference:
+
+1. **A platform we already support.** Many councils share one, and then the council is a few lines of configuration. See the table below.
+2. **An open dataset** (a `data.*.gov.au` portal). These are the most stable.
+3. **A JSON API** the page calls.
+4. **Scraping the page's HTML**, as a last resort.
+
+| Platform          | How to recognise it                                                    | Example                         |
+| ----------------- | ---------------------------------------------------------------------- | ------------------------------- |
+| waste-info.com.au | `https://<council>.waste-info.com.au/api/v1/streets.json` returns JSON | `src/councils/qld/redland.ts`   |
+| Granicus OpenCities | `<council site>/api/v1/myarea/search?keywords=...` returns JSON      | `src/councils/qld/gold-coast.ts` |
+| Opendatasoft      | A data portal with `/api/explore/v2.1/` addresses                      | `src/councils/qld/brisbane.ts`  |
+
+Many OpenCities councils block automated requests, so check that a plain request works before starting.
+
+## 2. Find the council's area code
+
+Every council area has a code from the Australian Bureau of Statistics. The quickest way to get it is to look up any address in that council: the "not supported yet" error includes the code.
+
+```bash
+npm run cli -- "1 Example Street, Suburb NSW"
+```
+
+## 3. Write the adapter
+
+Create `src/councils/<state>/<name>.ts`. For a supported platform it is only configuration:
+
+```ts
+import { createWasteInfoCouncil } from '../../platforms/waste-info.js';
+
+/** Example City Council, on waste-info.com.au. */
+export const example = createWasteInfoCouncil({
+  id: 'nsw/example',
+  name: 'Example City Council',
+  state: 'NSW',
+  lgaCodes: ['12345'],
+  timezone: 'Australia/Sydney',
+  subdomain: 'example',
+});
+```
+
+Otherwise implement `CouncilAdapter`, as `src/councils/qld/brisbane.ts` does. It is one function, `getSchedule(address, ctx)`, which returns the matched address and its bins. Use `ctx.http` rather than `fetch`, so the adapter can be tested without the network.
+
+If you find a platform that several councils share, put it in `src/platforms/` so each of those councils becomes a few lines.
+
+## 4. Register it
+
+Add it to the list in `src/councils/index.ts`. Its landing page and sitemap entry appear automatically.
+
+## 5. Test it
+
+- Add one real address for the council to `test/live/councils.test.ts`, then run `npm run test:live`. Prefer a public building over someone's home.
+- For a new platform or a hand-written adapter, add a unit test with a saved response in `test/fixtures/`.
+- Add the council to [PROGRESS.md](../PROGRESS.md).
