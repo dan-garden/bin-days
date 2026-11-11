@@ -10,8 +10,10 @@ import {
   shortCouncilName,
   sourceDescription,
   statePath,
+  suburbPath,
 } from '../councils/names.js';
 import type { CouncilRegistry } from '../councils/registry.js';
+import { findSuburb, nearestSuburbs, type Suburb, suburbsOf } from '../councils/suburbs.js';
 import type { CouncilInfo } from '../councils/types.js';
 import { boundsOf, centreOf, distanceKm } from '../geo/bounds.js';
 import type { Coverage } from '../service.js';
@@ -56,6 +58,10 @@ export interface PageData {
   council?: Pick<CouncilInfo, 'id' | 'name' | 'state' | 'website' | 'platform'>;
   /** The closest other councils, nearest first. */
   nearby?: CouncilLink[];
+  /** Set on a suburb's page, along with its council. */
+  suburb?: Suburb;
+  /** Suburbs to link to: all of the council's on its own page, the nearest ones on a suburb's. */
+  suburbs?: string[];
   /** Every supported council, on the pages that list them, so the UI needn't fetch them. */
   councils?: CouncilLink[];
   /** How many councils are supported. The UI asks for the coverage map by this number, so a
@@ -72,6 +78,8 @@ const scriptJson = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u0
 const link = (href: string, text: string) =>
   `<a href="${escapeHtml(href)}">${escapeHtml(text)}</a>`;
 const asLink = ({ id, name, state }: CouncilLink): CouncilLink => ({ id, name, state });
+const suburbLinks = (council: CouncilLink, suburbs: string[]) =>
+  `<ul>${suburbs.map((name) => `<li>${link(suburbPath(council, name), `${name} bin day`)}</li>`).join('')}</ul>`;
 const councilLinks = (councils: CouncilLink[]) =>
   `<ul>${councils.map((c) => `<li>${link(councilPath(c), `${shortCouncilName(c.name)} bin day`)}</li>`).join('')}</ul>`;
 
@@ -250,6 +258,7 @@ function councilPage(council: CouncilInfo, nearby: CouncilLink[]): Page {
   const state = STATE_NAMES[council.state];
   const description = `Find your next bin day in ${place}, ${state}. Type your address to see when ${council.name} collects, and whether it's general waste, recycling or green waste this week.`;
   const { id, name, website, platform } = council;
+  const suburbs = suburbsOf(id).map((suburb) => suburb.name);
   return {
     path: councilPath(council),
     title: `${place} bin day: which bins go out this week?`,
@@ -268,16 +277,61 @@ function councilPage(council: CouncilInfo, nearby: CouncilLink[]): Page {
         ...(platform ? { platform } : {}),
       },
       nearby,
+      suburbs,
     },
     body: [
       `<p>${escapeHtml(description)}</p>`,
       '<h2>How it works</h2>',
       `<ol><li>Type your street address in ${escapeHtml(place)}.</li><li>We look your property up with ${escapeHtml(council.name)}.</li><li>You see your next collection day and which bins to put out, plus the weeks after.</li></ol>`,
       `<p>The dates come from ${escapeHtml(sourceDescription(council))}.${website ? ` ${link(website, `${council.name} website`)}` : ''}</p>`,
+      ...(suburbs.length
+        ? [`<h2>Suburbs in ${escapeHtml(place)}</h2>`, suburbLinks(council, suburbs)]
+        : []),
       ...(nearby.length
         ? [`<h2>Councils near ${escapeHtml(place)}</h2>`, councilLinks(nearby)]
         : []),
       `<p>${link(statePath(council.state), `All ${state} councils`)}</p>`,
+    ],
+  };
+}
+
+/** How many nearby suburbs a suburb's page links to. */
+const NEARBY_SUBURBS = 12;
+
+function suburbPage(council: CouncilInfo, suburb: Suburb): Page {
+  const place = shortCouncilName(council.name);
+  const state = STATE_NAMES[council.state];
+  const description = `Find your next bin day in ${suburb.name}, ${state}. ${council.name} collects the bins in ${suburb.name}: type your address to see your collection day, and whether it's general waste, recycling or green waste this week.`;
+  const { id, name, website, platform } = council;
+  const nearby = nearestSuburbs(id, suburb, NEARBY_SUBURBS).map((other) => other.name);
+  return {
+    path: suburbPath(council, suburb.name),
+    title: `${suburb.name} bin day: which bins go out this week?`,
+    description,
+    trail: [
+      HOME,
+      { name: state, path: statePath(council.state) },
+      { name: `${place} bin day`, path: councilPath(council) },
+      { name: suburb.name, path: suburbPath(council, suburb.name) },
+    ],
+    data: {
+      council: {
+        id,
+        name,
+        state: council.state,
+        ...(website ? { website } : {}),
+        ...(platform ? { platform } : {}),
+      },
+      suburb,
+      suburbs: nearby,
+    },
+    body: [
+      `<p>${escapeHtml(description)}</p>`,
+      `<p>The dates come from ${escapeHtml(sourceDescription(council))}. Collection days can differ from street to street, so the answer is for your own address.</p>`,
+      ...(nearby.length
+        ? [`<h2>Suburbs near ${escapeHtml(suburb.name)}</h2>`, suburbLinks(council, nearby)]
+        : []),
+      `<p>${link(councilPath(council), `All of ${place}`)}</p>`,
     ],
   };
 }
@@ -304,6 +358,9 @@ function sitemap(origin: string, councils: CouncilInfo[]): string {
     '/',
     ...byState(councils).map(([state]) => statePath(state)),
     ...councils.map(councilPath),
+    ...councils.flatMap((council) =>
+      suburbsOf(council.id).map((suburb) => suburbPath(council, suburb.name)),
+    ),
   ];
   const urls = paths.map((path) => `  <url><loc>${escapeHtml(origin + path)}</loc></url>`);
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
@@ -393,6 +450,13 @@ export function addSiteRoutes(
     // The page is worth serving even if the boundary service is down; it just lists no neighbours.
     const coverage = await options.coverage?.().catch(() => undefined);
     return send(c, councilPage(council, coverage ? nearestCouncils(coverage, council) : []));
+  });
+
+  app.get(`${PAGES_PATH}/:state/:council/:suburb`, (c) => {
+    const id = `${c.req.param('state')}/${c.req.param('council')}`.toLowerCase();
+    const council = registry.list().find((item) => item.id === id);
+    const suburb = council && findSuburb(council.id, c.req.param('suburb'));
+    return council && suburb ? send(c, suburbPage(council, suburb)) : c.notFound();
   });
 
   app.get('/sitemap.xml', (c) => text(c, sitemap(origin(c), registry.list()), 'application/xml'));

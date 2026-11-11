@@ -49,19 +49,21 @@ Canberra
 
 ## Next
 
-Tracked as issues on GitHub:
+Tracked as [issues on GitHub](https://github.com/dan-garden/bin-days/issues). The ones in progress or next up:
 
-- [ ] **More IntraMaps councils** ([#1](https://github.com/dan-garden/bin-days/issues/1)). Twelve are done. Wanneroo, Greater Dandenong and Melville need an access key we don't have.
-- [ ] **Councils whose map service gives a weekday and "week 1 or 2"** ([#2](https://github.com/dan-garden/bin-days/issues/2)). Newcastle, Moonee Valley, Yarra and Bassendean are done, using dates or formulas the councils publish themselves. Wyndham and Parramatta still need a date from the council's calendar; Sutherland, Wingecarribee, Albany and Mundaring are blocked for other reasons, listed on the issue.
-- [ ] **More councils with their own lookup** ([#3](https://github.com/dan-garden/bin-days/issues/3)). All done except Townsville, which has no way from an address to its property.
-- [ ] **Councils another bin day site covers and we don't** ([#11](https://github.com/dan-garden/bin-days/issues/11)). 39 of the 66 are done. Campaspe, Albany and Byron have a usable source and are next; the rest refuse our requests, need an access key, or publish only a calendar. The issue has the reason for each.
+- [ ] **Weekly check that every council's source still works** ([#15](https://github.com/dan-garden/bin-days/issues/15)).
+- [ ] **Councils still to add** ([#11](https://github.com/dan-garden/bin-days/issues/11)). Campaspe, Albany and Byron have a usable source; the rest refuse our requests, need an access key, or publish only a calendar. The issue has the reason for each.
+- [ ] **Reminders that work in every calendar app** ([#6](https://github.com/dan-garden/bin-days/issues/6)). The calendar feed carries one, but Google ignores it and Apple removes it by default.
 - [ ] **Two South Australian councils** are in the state service but did not pass an end-to-end check: Ceduna and Karoonda East Murray.
+
+Done recently: a calendar feed for any address (`/v1/calendar.ics`), and a page for each of about 7,800 suburbs.
 
 [docs/council-candidates.md](docs/council-candidates.md) has earlier research on about 40 large councils.
 
 ## Known gaps
 
 - **No Northern Territory yet.**
+- **A suburb's page sits under one council,** the one the middle of the suburb is in. A suburb split between two councils is only listed under that one, and Queenscliffe's two suburbs are missing because their middles fall outside its small area.
 - **South Australian councils are matched by map zone, not by address.** An address that geocodes to the wrong side of a zone boundary gets its neighbour's days. Fortnightly weeks there are worked out from a rule that was checked against one council's published dates.
 - **Cardinia's dates are counted from 2017.** Its map layer gives each bin a start date from then and a cycle; that hasn't been checked against the council's current calendar.
 - **Councils read from a zone file are matched by map zone, not by address** (Bendigo, Frankston, Glen Eira, Boroondara, Melbourne and others), with the same boundary caveat as South Australia.

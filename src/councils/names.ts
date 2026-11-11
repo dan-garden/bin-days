@@ -62,6 +62,17 @@ export const statePath = (state: string) => `${PAGES_PATH}/${state.toLowerCase()
 /** A council's landing page on the website, e.g. `/bin-days/qld/brisbane`. */
 export const councilPath = (council: { id: string }) => `${PAGES_PATH}/${council.id}`;
 
+/** A suburb's name as it appears in a page address: "Mount Kuring-Gai" becomes `mount-kuring-gai`. */
+export const suburbSlug = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+/** A suburb's page, under its council's, e.g. `/bin-days/qld/gold-coast/nerang`. */
+export const suburbPath = (council: { id: string }, suburb: string) =>
+  `${councilPath(council)}/${suburbSlug(suburb)}`;
+
 const ADDRESS_PATH = '/address/';
 
 /** A link that looks an address up when opened, e.g. `/address/1+Example+Street,+Nerang+QLD`. */
@@ -94,6 +105,7 @@ export function addressFromPath(path: string): string | undefined {
 /** The heading and one-line introduction of each kind of page, shared by the server and the UI so they match exactly. */
 export function pageHeading(page: {
   council?: { name: string } | undefined;
+  suburb?: { name: string } | undefined;
   state?: AustralianState | undefined;
   address?: string | undefined;
 }): { title: string; lede: string } {
@@ -101,6 +113,12 @@ export function pageHeading(page: {
     return {
       title: 'Which bins go out?',
       lede: `Bin days for ${page.address}, from the council's collection calendar.`,
+    };
+  }
+  if (page.council && page.suburb) {
+    return {
+      title: `${page.suburb.name} bin day`,
+      lede: `${page.council.name} collects the bins in ${page.suburb.name}. Type your address to see your day, and which bins go out.`,
     };
   }
   if (page.council) {

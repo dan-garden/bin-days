@@ -12,7 +12,13 @@ import {
 } from '@mantine/core';
 import { AnimatePresence, m } from 'motion/react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { pageHeading, STATE_NAMES, shortCouncilName, statePath } from '../../src/councils/names.js';
+import {
+  councilPath,
+  pageHeading,
+  STATE_NAMES,
+  shortCouncilName,
+  statePath,
+} from '../../src/councils/names.js';
 import {
   ApiError,
   type BinDaysResult,
@@ -77,7 +83,13 @@ const heading = pageHeading(page);
 const trail: Array<{ name: string; href?: string }> = page.council
   ? [
       { name: STATE_NAMES[page.council.state], href: statePath(page.council.state) },
-      { name: shortCouncilName(page.council.name) },
+      // A suburb's page sits under its council's.
+      ...(page.suburb
+        ? [
+            { name: shortCouncilName(page.council.name), href: councilPath(page.council) },
+            { name: page.suburb.name },
+          ]
+        : [{ name: shortCouncilName(page.council.name) }]),
     ]
   : page.state
     ? [{ name: STATE_NAMES[page.state] }]
@@ -135,11 +147,12 @@ export function App() {
   // that it is about the council whose page this is, or about finding one.
   const answered = lookup.status === 'done' ? lookup.result.council : undefined;
   const council = answered ?? page.council;
+  // The looked-up address, or until there is one, the suburb whose page this is.
   const pin = useMemo(
     () =>
       located?.latitude != null && located.longitude != null
         ? { latitude: located.latitude, longitude: located.longitude }
-        : undefined,
+        : page.suburb,
     [located?.latitude, located?.longitude],
   );
 
@@ -269,6 +282,10 @@ export function App() {
             council={council}
             nearby={council.id === page.council?.id ? (page.nearby ?? []) : []}
             pin={pin}
+            // The page's own suburb and links, unless a lookup has moved on to another council.
+            {...(council.id === page.council?.id
+              ? { suburb: page.suburb, suburbs: page.suburbs ?? [] }
+              : {})}
           />
         )}
         {/* Browsing for a council: the whole section before a lookup, a short list after one.
