@@ -66,7 +66,9 @@ describe('website pages', () => {
     expect(body).toContain('<h1 class="hero-title">Brisbane bin day</h1>');
     expect(body).toContain('href="https://example.org/bins?a=1&amp;b=2"'); // escaped
     const data = /<script id="page-data"[^>]*>(.*?)<\/script>/.exec(body)?.[1];
-    expect(JSON.parse(data ?? '')).toEqual({
+    const { suburbs, ...rest } = JSON.parse(data ?? '');
+    expect(suburbs).toContain('Fortitude Valley');
+    expect(rest).toEqual({
       council: {
         id: 'qld/brisbane',
         name: 'Brisbane City Council',
@@ -138,6 +140,37 @@ describe('website pages', () => {
     expect((await get('/bin-days/qld/atlantis')).response.status).toBe(404);
   });
 
+  it("gives each suburb a page under its council's", async () => {
+    const { response, body } = await get('/bin-days/qld/brisbane/fortitude-valley');
+    expect(response.status).toBe(200);
+    expect(body).toContain('<title>Fortitude Valley bin day: which bins go out this week?</title>');
+    expect(body).toContain(
+      '<link rel="canonical" href="https://binday.test/bin-days/qld/brisbane/fortitude-valley" />',
+    );
+    expect(body).toContain('<h1 class="hero-title">Fortitude Valley bin day</h1>');
+    expect(body).toContain('Brisbane City Council collects the bins in Fortitude Valley.');
+    // It links to the suburbs around it and back up to its council, and tells the UI where it is.
+    expect(body).toContain('<a href="/bin-days/qld/brisbane/new-farm">New Farm bin day</a>');
+    expect(body).toContain('<a href="/bin-days/qld/brisbane">Brisbane bin day</a>');
+    expect(body).toMatch(
+      /"suburb":\{"name":"Fortitude Valley","latitude":-27\.\d+,"longitude":153\.\d+\}/,
+    );
+  });
+
+  it("lists a council's suburbs on its page and in the sitemap, and has no page for others", async () => {
+    const council = await get('/bin-days/qld/brisbane');
+    expect(council.body).toContain(
+      '<a href="/bin-days/qld/brisbane/fortitude-valley">Fortitude Valley bin day</a>',
+    );
+    const sitemap = await get('/sitemap.xml');
+    expect(sitemap.body).toContain(
+      '<loc>https://binday.test/bin-days/qld/brisbane/paddington</loc>',
+    );
+    expect((await get('/bin-days/qld/brisbane/atlantis')).response.status).toBe(404);
+    // A suburb only has a page under the council it is in.
+    expect((await get('/bin-days/vic/ballarat/paddington')).response.status).toBe(404);
+  });
+
   it('serves the page from the same build as the scripts in public/', () => {
     // If this fails, run `npm run build:web`: the server would name scripts that don't exist.
     expect(BUILT_SHELL).toBe(
@@ -173,7 +206,9 @@ describe('files for crawlers and language models', () => {
   it('lists every page in the sitemap and points robots at it', async () => {
     const sitemap = await get('/sitemap.xml');
     expect(sitemap.response.headers.get('content-type')).toContain('application/xml');
-    expect([...sitemap.body.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1])).toEqual([
+    // The site's own pages come first, then every suburb's.
+    const pages = [...sitemap.body.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
+    expect(pages.slice(0, 5)).toEqual([
       'https://binday.test/',
       'https://binday.test/bin-days/qld',
       'https://binday.test/bin-days/vic',

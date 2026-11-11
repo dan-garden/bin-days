@@ -17,6 +17,7 @@
     "start": "node dist/server.js",
     "build": "tsc -p tsconfig.build.json",
     "build:web": "vite build",
+    "build:suburbs": "tsx scripts/build-suburbs.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p web",
     "lint": "biome check .",
     "format": "biome check --write .",
