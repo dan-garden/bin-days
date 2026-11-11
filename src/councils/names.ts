@@ -72,6 +72,13 @@ export const addressPath = (address: string) =>
     .replace(/%2C/g, ',')
     .replace(/%2F/g, '/');
 
+/** The calendar feed of an address's bin days, with a reminder at that hour the evening before. */
+export const calendarPath = (address: string, reminderHour?: number) =>
+  `/v1/calendar.ics?${new URLSearchParams({
+    address: address.trim().replace(/\s+/g, ' '),
+    ...(reminderHour != null ? { reminder: String(reminderHour) } : {}),
+  })}`;
+
 /** The address an `addressPath` link carries, or nothing if the path isn't one. */
 export function addressFromPath(path: string): string | undefined {
   if (!path.startsWith(ADDRESS_PATH)) return undefined;

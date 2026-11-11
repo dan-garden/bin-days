@@ -36,6 +36,20 @@ export const CollectionsQuery = z.object({
     .meta({ description: 'Skip geocoding and use this council id.', examples: ['qld/brisbane'] }),
 });
 
+export const CalendarQuery = CollectionsQuery.pick({ address: true, council: true }).extend({
+  reminder: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(23)
+    .optional()
+    .meta({
+      description:
+        'Add a reminder to each event at this hour (0 to 23) the evening before. None if left out.',
+      examples: [18],
+    }),
+});
+
 export const CouncilsQuery = z.object({
   state: z
     .string()
@@ -194,6 +208,24 @@ export function openApiDocument() {
           parameters: parameters(CollectionsQuery),
           responses: {
             200: json('The schedule for the matched property.', CollectionsResponse),
+            400: json('Bad params.', ErrorResponse),
+            404: json('Could not locate the address.', ErrorResponse),
+            422: json("The address is valid but its council isn't supported yet.", ErrorResponse),
+            502: json('The council site is down or has changed.', ErrorResponse),
+          },
+        },
+      },
+      '/v1/calendar.ics': {
+        get: {
+          summary: 'Calendar feed of bin days for an address',
+          description:
+            'An iCalendar feed of the next year of collection days, one all-day event per day. Subscribe to its address in a calendar app (use `webcal://` in place of `https://`) and the app keeps it up to date.',
+          parameters: parameters(CalendarQuery),
+          responses: {
+            200: {
+              description: 'The calendar.',
+              content: { 'text/calendar': { schema: { type: 'string' } } },
+            },
             400: json('Bad params.', ErrorResponse),
             404: json('Could not locate the address.', ErrorResponse),
             422: json("The address is valid but its council isn't supported yet.", ErrorResponse),

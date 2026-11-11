@@ -5,7 +5,8 @@ import { normaliseState } from '../core/address.js';
 import { secondsUntilMidnight } from '../core/date.js';
 import { BinDaysError, type BinDaysErrorCode } from '../core/errors.js';
 import type { BinDaysService } from '../service.js';
-import { CollectionsQuery, DOCS_HTML, openApiDocument } from './openapi.js';
+import { toCalendar } from './calendar.js';
+import { CalendarQuery, CollectionsQuery, DOCS_HTML, openApiDocument } from './openapi.js';
 
 const STATUS: Record<BinDaysErrorCode, ContentfulStatusCode> = {
   INVALID_INPUT: 400,
@@ -15,7 +16,25 @@ const STATUS: Record<BinDaysErrorCode, ContentfulStatusCode> = {
   PARSE_ERROR: 502,
 };
 
-export function createApp(service: BinDaysService): Hono {
+/** What went wrong with the query, as one error. */
+const badQuery = (error: { issues: Array<{ message: string }> }) =>
+  new BinDaysError('INVALID_INPUT', error.issues.map((i) => i.message).join('; '));
+
+/**
+ * The answer only changes when the day does, so a CDN in front (e.g. Vercel's) keeps it
+ * until the council's midnight. Browsers check back sooner.
+ */
+function untilMidnight(timezone: string): string {
+  const seconds = secondsUntilMidnight(timezone);
+  return `public, max-age=${Math.min(seconds, 1800)}, s-maxage=${seconds}`;
+}
+
+export interface AppOptions {
+  /** The site's public address, linked from calendar events. Defaults to the request's. */
+  siteUrl?: string | undefined;
+}
+
+export function createApp(service: BinDaysService, options: AppOptions = {}): Hono {
   const app = new Hono();
 
   app.use('/v1/*', cors());
@@ -36,9 +55,7 @@ export function createApp(service: BinDaysService): Hono {
    */
   app.get('/v1/collections', async (c) => {
     const parsed = CollectionsQuery.safeParse(c.req.query());
-    if (!parsed.success) {
-      throw new BinDaysError('INVALID_INPUT', parsed.error.issues.map((i) => i.message).join('; '));
-    }
+    if (!parsed.success) throw badQuery(parsed.error);
     const { address, date, from, to, council } = parsed.data;
     const result = await service.lookup({
       address,
@@ -47,11 +64,33 @@ export function createApp(service: BinDaysService): Hono {
       ...(to ? { to } : {}),
       ...(council ? { council } : {}),
     });
-    // The answer only changes when the day does, so a CDN in front (e.g. Vercel's) keeps it
-    // until the council's midnight. Browsers check back sooner.
-    const seconds = secondsUntilMidnight(result.timezone);
-    c.header('cache-control', `public, max-age=${Math.min(seconds, 1800)}, s-maxage=${seconds}`);
+    c.header('cache-control', untilMidnight(result.timezone));
     return c.json(result);
+  });
+
+  /**
+   * GET /v1/calendar.ics?address=833 Southport Nerang Rd Nerang&reminder=18
+   * The next year of collection days as a calendar feed to subscribe to.
+   */
+  app.get('/v1/calendar.ics', async (c) => {
+    const parsed = CalendarQuery.safeParse(c.req.query());
+    if (!parsed.success) throw badQuery(parsed.error);
+    const { address, council, reminder } = parsed.data;
+    const result = await service.lookup({
+      address,
+      days: 365,
+      ...(council ? { council } : {}),
+    });
+    c.header('cache-control', untilMidnight(result.timezone));
+    c.header('content-disposition', 'inline; filename="bin-days.ics"');
+    return c.body(
+      toCalendar(result, {
+        origin: options.siteUrl ?? new URL(c.req.url).origin,
+        reminderHour: reminder,
+      }),
+      200,
+      { 'content-type': 'text/calendar; charset=utf-8' },
+    );
   });
 
   /** GET /v1/councils?state=QLD lists supported councils. */

@@ -15,7 +15,7 @@ try {
  * serves the default export. `server.ts` wraps the same app for plain Node.
  */
 const service = createServiceFromEnv();
-const app: Hono = createApp(service);
+const app: Hono = createApp(service, { siteUrl: process.env.SITE_URL });
 
 // Vercel's CDN serves `public/` by exact path only, so `/` and the council
 // pages reach the app, which serves the UI with each page's content in it.

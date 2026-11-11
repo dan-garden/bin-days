@@ -222,6 +222,7 @@ body::before {
 .next-card,
 .coverage-map-frame,
 .day-row,
+.action-card,
 .service-chip {
   background: var(--card);
   border: 1px solid var(--card-border);
@@ -295,6 +296,20 @@ body::before {
 
 .estimated {
   cursor: help;
+}
+
+.action-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1.1rem;
+}
+
+.action-card-wide {
+  flex-basis: 100%;
 }
 
 /* Bins */

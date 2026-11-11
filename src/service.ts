@@ -34,8 +34,10 @@ export interface LookupRequest {
   date?: LocalDate;
   /** Start of range (inclusive). Defaults to today in the council's timezone. */
   from?: LocalDate;
-  /** End of range (inclusive). Defaults to `from + 13` days (two weeks). */
+  /** End of range (inclusive). Defaults to `days` from `from`. */
   to?: LocalDate;
+  /** How many days the range covers when `to` isn't given. Defaults to 14 (two weeks). */
+  days?: number;
   /** Skip geocoding and use this council id directly, e.g. `qld/gold-coast`. */
   council?: string;
 }
@@ -138,7 +140,7 @@ export class BinDaysService {
 
     const todayLocal = today(adapter.timezone, this.#now());
     const from = request.date ?? request.from ?? todayLocal;
-    const to = request.date ?? request.to ?? addDays(from, 13);
+    const to = request.date ?? request.to ?? addDays(from, (request.days ?? 14) - 1);
     if (compareDates(from, to) > 0) throw invalidInput('`from` must be on or before `to`');
     if (daysBetween(from, to) + 1 > this.#maxRangeDays) {
       throw invalidInput(`Date range is limited to ${this.#maxRangeDays} days`);
