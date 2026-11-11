@@ -15,6 +15,7 @@ import type { CouncilRegistry } from '../councils/registry.js';
 import type { CouncilInfo } from '../councils/types.js';
 import { boundsOf, centreOf, distanceKm } from '../geo/bounds.js';
 import type { Coverage } from '../service.js';
+import { SHELL } from './shell.generated.js';
 
 /**
  * The public website around the API: the home page, a page per state, a page
@@ -31,8 +32,8 @@ import type { Coverage } from '../service.js';
 export interface SiteOptions {
   /** The site's canonical origin, e.g. `https://binday.example`. Defaults to the request's own. */
   siteUrl?: string | undefined;
-  /** Load the built UI's HTML. Defaults to fetching this deployment's `/index.html`. */
-  loadShell?: (origin: string) => Promise<string | undefined>;
+  /** The built UI's HTML. Defaults to the one from this build (`npm run build:web`). */
+  shell?: string | undefined;
   /** Where the councils are, for working out each one's neighbours. Without it, pages list none. */
   coverage?: () => Promise<Coverage>;
 }
@@ -42,9 +43,6 @@ const HEAD = /<!--seo:head-->[\s\S]*?<!--\/seo:head-->/;
 const BODY = '<!--seo:body-->';
 /** How many neighbouring councils a council's page links to. */
 const NEARBY = 6;
-
-/** Used if the built UI can't be loaded; the page still reads fine without it. */
-const BARE_SHELL = `<!doctype html><html lang="en-AU"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><!--seo:head--><!--/seo:head--></head><body><div id="root">${BODY}</div></body></html>`;
 
 type CouncilLink = Pick<CouncilInfo, 'id' | 'name' | 'state'>;
 
@@ -351,16 +349,9 @@ export function addSiteRoutes(
     const local = hostname === 'localhost' || hostname === '127.0.0.1';
     return `${local ? 'http' : 'https'}://${host}`;
   };
-  const loadShell =
-    options.loadShell ??
-    (async (from: string) => {
-      const response = await fetch(`${from}/index.html`).catch(() => undefined);
-      return response?.ok ? response.text() : undefined;
-    });
+  const shell = options.shell ?? SHELL;
 
-  const send = async (c: Context, page: Page) => {
-    // The UI's HTML comes from the address this request arrived on, which is always this deployment.
-    const shell = (await loadShell(new URL(c.req.url).origin)) ?? BARE_SHELL;
+  const send = (c: Context, page: Page) => {
     // Browsers always revalidate (a new deploy changes the script names); the CDN keeps it an hour.
     c.header('cache-control', 'public, max-age=0, s-maxage=3600');
     return c.html(renderPage(shell, origin(c), page, registry.list().length));

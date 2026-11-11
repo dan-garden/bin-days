@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
+import { SHELL as BUILT_SHELL } from '../src/api/shell.generated.js';
 import { addSiteRoutes, type SiteOptions } from '../src/api/site.js';
 import { CouncilRegistry } from '../src/councils/registry.js';
 import type { CouncilAdapter } from '../src/councils/types.js';
@@ -29,7 +31,7 @@ function site(options: SiteOptions = {}) {
     }),
     council('vic/ballarat', 'City of Ballarat', { state: 'VIC' }),
   ]);
-  addSiteRoutes(app, registry, { loadShell: async () => SHELL, ...options });
+  addSiteRoutes(app, registry, { shell: SHELL, ...options });
   return app;
 }
 
@@ -136,10 +138,11 @@ describe('website pages', () => {
     expect((await get('/bin-days/qld/atlantis')).response.status).toBe(404);
   });
 
-  it('still serves a readable page when the UI cannot be loaded', async () => {
-    const { response, body } = await get('/', { loadShell: async () => undefined });
-    expect(response.status).toBe(200);
-    expect(body).toContain('<h1 class="hero-title">Which bins go out?</h1>');
+  it('serves the page from the same build as the scripts in public/', () => {
+    // If this fails, run `npm run build:web`: the server would name scripts that don't exist.
+    expect(BUILT_SHELL).toBe(
+      readFileSync(new URL('../public/index.html', import.meta.url), 'utf8'),
+    );
   });
 
   it('opens a shared address link on that address, and keeps it out of search results', async () => {
