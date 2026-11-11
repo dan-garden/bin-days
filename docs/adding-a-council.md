@@ -17,6 +17,8 @@ Open the council's "find my bin day" page with your browser's developer tools on
 | My Local Services | The council is in South Australia and listed in the state's My Local Services app | `src/councils/sa/robe.ts` |
 | IntraMaps | The council's "find my bin day" opens a map on `*.spatial.t1cloud.com` or a path containing `IntraMaps` | `src/councils/wa/swan.ts` |
 | ArcGIS map layer | A map layer (`.../FeatureServer/0`) of zones or properties, with a date or a weekday per bin | `src/councils/tas/launceston.ts` (dates), `src/councils/nsw/newcastle.ts` (weekday and week), `src/councils/vic/moonee-valley.ts` (found by address) |
+| Zone file | The council's map is a Pozi site (`<council>.pozi.com`) whose config (`https://config.pozi.com/public/production/<council>.json`) names a GeoJSON file of zones, or the council has a "garbage collection zones" dataset on data.gov.au | `src/councils/vic/frankston.ts` (standard fields), `src/councils/vic/greater-bendigo.ts` (its own fields) |
+| Pozi map server | A Pozi site with no zone file: its map lists a "QGIS Project" dataset to query | `src/councils/wa/vincent.ts` (by address), `src/councils/vic/northern-grampians.ts` (by map point) |
 
 Council sites often refuse requests that look anonymous or pretend to be a browser, but answer ones that say who they are. The app sends an identifying `User-Agent` (see `BIN_DAYS_USER_AGENT`); test with that, and if a site still refuses, leave it alone rather than work around it.
 
@@ -47,6 +49,8 @@ export const example = createWasteInfoCouncil({
 ```
 
 Otherwise implement `CouncilAdapter`, as `src/councils/qld/brisbane.ts` does. It is one function, `getSchedule(address, ctx)`, which returns the matched address and its bins. Use `ctx.http` rather than `fetch`, so the adapter can be tested without the network.
+
+Most councils' own lookups work the same way: search for the address, pick the right result, then ask for that property's bins. `searchLine` and `pickAddress` in `src/core/address.ts` do the first two steps, as `src/councils/wa/murray.ts` shows.
 
 For an IntraMaps council, `readIntraMapsPanel` in `src/platforms/intramaps.ts` returns every field of a property's panel, which shows which fields are bins and how the council words them.
 

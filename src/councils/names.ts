@@ -45,6 +45,8 @@ export function sourceDescription(council: {
     case 'intramaps':
       return `${council.name}'s online property map`;
     case 'arcgis-zones':
+    case 'zone-file':
+    case 'pozi':
       return `the collection map ${council.name} publishes`;
     default:
       return `open data published for ${council.name}`;

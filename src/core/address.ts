@@ -1,4 +1,10 @@
-import { type AddressParts, AUSTRALIAN_STATES, type AustralianState } from './types.js';
+import { addressNotFound, invalidInput } from './errors.js';
+import {
+  type AddressParts,
+  AUSTRALIAN_STATES,
+  type AustralianState,
+  type ResolvedAddress,
+} from './types.js';
 
 /**
  * Lightweight Australian street-address parser.
@@ -243,4 +249,46 @@ export function preferSuburb<T>(
 ): T[] {
   const inSuburb = candidates.filter((c) => suburbOf(c).toLowerCase() === suburb.toLowerCase());
   return inSuburb.length ? inSuburb : candidates;
+}
+
+/**
+ * The one of a council's search results that is the address asked for: the same
+ * house, and in the user's suburb where the results span several. Throws
+ * `addressNotFound`, offering the results as suggestions, when none is.
+ */
+export function pickAddress<T>(
+  results: T[],
+  lineOf: (result: T) => string,
+  address: ResolvedAddress,
+  council: string,
+): T {
+  const { parts } = address;
+  // A unit's own entry when a unit was asked for, the whole property's otherwise.
+  const hasUnit = (line: string) => /^\s*(?:unit\s*)?[0-9]+[a-z]?\s*\//i.test(line);
+  const sameHouse = results
+    .filter((r) => matchesHouseNumber(lineOf(r), parts))
+    .sort((a, b) => (hasUnit(lineOf(a)) ? 1 : 0) - (hasUnit(lineOf(b)) ? 1 : 0));
+  if (parts.unit) sameHouse.reverse();
+  const suburb = parts.suburb?.toLowerCase();
+  const match =
+    (suburb && sameHouse.find((r) => lineOf(r).toLowerCase().includes(suburb))) || sameHouse[0];
+  if (!match) {
+    throw addressNotFound(`${council} has no property matching "${address.input}"`, {
+      suggestions: results.slice(0, 5).map(lineOf),
+    });
+  }
+  return match;
+}
+
+/** The street line to search a council's records with. Throws if the address has no house number. */
+export function searchLine(
+  address: ResolvedAddress,
+  council: string,
+  options?: Parameters<typeof formatStreetLine>[1],
+): string {
+  const { parts } = address;
+  if (!parts.houseNumber || !parts.street) {
+    throw invalidInput(`${council} lookups need a house number and street`, { parts });
+  }
+  return formatStreetLine(parts, options);
 }
