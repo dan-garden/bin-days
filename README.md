@@ -4,7 +4,7 @@ Which bins go out, and when, for an Australian street address.
 
 Type an address into the website, or send it to the API, and get the next collection day and the bins to put out. The answer has the same shape for every council.
 
-**Try it:** https://bin-days-rho.vercel.app
+**Try it:** https://bindays.au
 
 ## Quick start
 
@@ -60,7 +60,7 @@ On the website, `/address/<address>` opens straight on that address's bins, so a
 }
 ```
 
-The full reference, with every field and error, is the interactive documentation at [`/docs`](https://bin-days-rho.vercel.app/docs).
+The full reference, with every field and error, is the interactive documentation at [`/docs`](https://bindays.au/docs).
 
 ## Where it works
 

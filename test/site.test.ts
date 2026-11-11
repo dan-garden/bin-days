@@ -45,6 +45,9 @@ describe('website pages', () => {
     expect(body).toContain('<title>Bin Days: which bins go out this week?</title>');
     expect(body).not.toContain('<title>Default</title>');
     expect(body).toContain('<link rel="canonical" href="https://binday.test/" />');
+    expect(body).toContain(
+      '<meta property="og:image" content="https://binday.test/og-image.png" />',
+    );
     expect(body).toContain('Free for 2 Australian councils, including Brisbane.');
     expect(body).toContain('<a href="/bin-days/qld">Queensland bin days</a>');
     expect(body).toContain('<a href="/bin-days/qld/brisbane">Brisbane bin day</a>');

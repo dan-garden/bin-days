@@ -2,7 +2,7 @@
 
 What Bin Days covers today, and what is next.
 
-The live list is always at [`/v1/councils`](https://bin-days-rho.vercel.app/v1/councils), or run `npm run cli -- --list`.
+The live list is always at [`/v1/councils`](https://bindays.au/v1/councils), or run `npm run cli -- --list`.
 
 ## Supported councils (166)
 

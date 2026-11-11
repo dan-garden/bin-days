@@ -1,0 +1,22 @@
+<!-- The picture shown when a link to the site is shared. After editing, rebuild the PNG:
+     convert -background none web/og-image.svg web/public/og-image.png -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>Bin Days</title>
+  <defs>
+    <g id="bin">
+      <circle cx="45" cy="62" r="6" fill="#1b1f1d" />
+      <path d="M15 25H49L45.5 60Q45.2 64 41.5 64H22.5Q18.8 64 18.5 60Z" fill="#2f3b36" />
+    </g>
+    <path id="lid" d="M11 27V22Q11 16 17 16H47Q53 16 53 22V27Z" />
+  </defs>
+  <rect width="1200" height="630" fill="#f5f7f1" />
+  <g transform="translate(232 30) scale(3)">
+    <use href="#bin" /><use href="#lid" fill="#e03131" />
+    <use href="#bin" x="62" /><use href="#lid" x="62" fill="#fcc419" />
+    <use href="#bin" x="124" /><use href="#lid" x="124" fill="#2f9e44" />
+    <use href="#bin" x="186" /><use href="#lid" x="186" fill="#9c36b5" />
+  </g>
+  <text x="600" y="380" text-anchor="middle" font-family="DejaVu Sans" font-weight="bold" font-size="104" fill="#1b1f1d">Bin Days</text>
+  <text x="600" y="462" text-anchor="middle" font-family="DejaVu Sans" font-size="44" fill="#2f3b36">Which bins go out this week?</text>
+  <text x="600" y="548" text-anchor="middle" font-family="DejaVu Sans" font-weight="bold" font-size="36" fill="#2f9e44">bindays.au</text>
+</svg>

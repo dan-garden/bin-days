@@ -143,7 +143,11 @@ function renderPage(shell: string, origin: string, page: Page, councilCount: num
     meta('property', 'og:description', page.description),
     meta('property', 'og:url', url),
     meta('property', 'og:locale', 'en_AU'),
-    meta('name', 'twitter:card', 'summary'),
+    meta('property', 'og:image', `${origin}/og-image.png`),
+    meta('property', 'og:image:width', '1200'),
+    meta('property', 'og:image:height', '630'),
+    meta('property', 'og:image:alt', `${SITE_NAME}: which bins go out this week?`),
+    meta('name', 'twitter:card', 'summary_large_image'),
     ...structuredData.map(
       (item) => `<script type="application/ld+json">${scriptJson(item)}</script>`,
     ),
