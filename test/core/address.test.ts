@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formatStreetLine, parseAustralianAddress } from '../../src/core/address.js';
+import {
+  formatStreetLine,
+  parseAustralianAddress,
+  pickAddress,
+  searchLine,
+} from '../../src/core/address.js';
 import { classifyBin } from '../../src/core/bin-types.js';
 
 describe('parseAustralianAddress', () => {
@@ -114,5 +119,44 @@ describe('classifyBin', () => {
 
   it('honours council overrides', () => {
     expect(classifyBin('Green bin', { 'green bin': 'general' })).toBe('general');
+  });
+});
+
+describe('pickAddress', () => {
+  const resolve = (input: string) => ({ input, parts: parseAustralianAddress(input) });
+  const lines = [
+    '112 Example Street Northtown',
+    '3/12 Example Street Southtown',
+    '12 Example Street Northtown',
+    '12 Example Street Southtown',
+  ];
+  const pick = (input: string) =>
+    pickAddress(lines, (line) => line, resolve(input), 'Test Council');
+
+  it('picks the same house, in the suburb asked for', () => {
+    expect(pick('12 Example St, Southtown VIC')).toBe('12 Example Street Southtown');
+    expect(pick('12 Example St')).toBe('12 Example Street Northtown');
+  });
+
+  it("picks a unit's own entry when a unit is asked for", () => {
+    expect(pick('3/12 Example St, Southtown VIC')).toBe('3/12 Example Street Southtown');
+  });
+
+  it('offers what it found when nothing is the same house', () => {
+    expect(() => pick('2 Example St, Southtown VIC')).toThrow(
+      expect.objectContaining({ code: 'ADDRESS_NOT_FOUND', details: { suggestions: lines } }),
+    );
+  });
+});
+
+describe('searchLine', () => {
+  it('gives the street line, and refuses an address with no house number', () => {
+    const resolve = (input: string) => ({ input, parts: parseAustralianAddress(input) });
+    expect(searchLine(resolve('3/12 Example St, Southtown VIC'), 'Test Council')).toBe(
+      '12 Example Street',
+    );
+    expect(() => searchLine(resolve('Example St, Southtown VIC'), 'Test Council')).toThrow(
+      expect.objectContaining({ code: 'INVALID_INPUT' }),
+    );
   });
 });

@@ -5,6 +5,7 @@ import {
   isLocalDate,
   nextWeekday,
   parseAustralianDate,
+  parseDateNear,
   secondsUntilMidnight,
   today,
   weekday,
@@ -62,9 +63,17 @@ describe('dates', () => {
     ['13-11-26', '2026-11-13'],
     ['Friday 13 November 2026', '2026-11-13'],
     ['13th Nov 2026', '2026-11-13'],
+    [' 13-Nov-2026', '2026-11-13'],
     ['2026-11-13', '2026-11-13'],
   ])('parses Australian date "%s"', (input, expected) => {
     expect(parseAustralianDate(input)).toBe(expected);
+  });
+
+  it('reads a date given without its year as the one nearest today', () => {
+    expect(parseDateNear('Tuesday 17th November', d('2026-11-11'))).toBe('2026-11-17');
+    expect(parseDateNear('Wednesday 6 January', d('2026-12-30'))).toBe('2027-01-06');
+    expect(parseDateNear('Monday 28 December', d('2027-01-02'))).toBe('2026-12-28');
+    expect(parseDateNear('no date', d('2026-11-11'))).toBeUndefined();
   });
 
   it('rejects impossible dates', () => {

@@ -64,7 +64,7 @@ The full reference, with every field and error, is the interactive documentation
 
 ## Where it works
 
-166 councils so far, in every state and the ACT.
+205 councils so far, in every state and the ACT.
 
 ## Project layout
 

@@ -4,31 +4,31 @@ What Bin Days covers today, and what is next.
 
 The live list is always at [`/v1/councils`](https://bindays.au/v1/councils), or run `npm run cli -- --list`.
 
-## Supported councils (166)
+## Supported councils (205)
 
-### South Australia (47)
+### South Australia (52)
 
-Adelaide, Adelaide Hills, Adelaide Plains, Alexandrina, Berri Barmera, Burnside, Charles Sturt, Clare and Gilbert Valleys, Cleve, Coorong, Copper Coast, Gawler, Goyder, Kangaroo Island, Kingston, Light, Lower Eyre, Marion, Mid Murray, Mitcham, Mount Barker, Mount Gambier, Murray Bridge, Naracoorte Lucindale, Northern Areas, Norwood Payneham and St Peters, Onkaparinga, Playford, Port Adelaide Enfield, Port Augusta, Port Lincoln, Port Pirie, Prospect, Renmark Paringa, Robe, Salisbury, Streaky Bay, Tea Tree Gully, The Flinders Ranges, Tumby Bay, Unley, Wakefield, Walkerville, West Torrens, Whyalla, Yankalilla, Yorke Peninsula
+Adelaide, Adelaide Hills, Adelaide Plains, Alexandrina, Barunga West, Berri Barmera, Burnside, Campbelltown, Charles Sturt, Clare and Gilbert Valleys, Cleve, Coorong, Copper Coast, Elliston, The Flinders Ranges, Gawler, Goyder, Kangaroo Island, Kingston, Light, Lower Eyre, Marion, Mid Murray, Mitcham, Mount Barker, Mount Gambier, Mount Remarkable, Murray Bridge, Naracoorte Lucindale, Northern Areas, Norwood Payneham and St Peters, Onkaparinga, Playford, Port Adelaide Enfield, Port Augusta, Port Lincoln, Port Pirie, Prospect, Renmark Paringa, Robe, Salisbury, Southern Mallee, Streaky Bay, Tea Tree Gully, Tumby Bay, Unley, Wakefield, Walkerville, West Torrens, Whyalla, Yankalilla, Yorke Peninsula
 
-### New South Wales (49)
+### New South Wales (53)
 
-Armidale, Ballina, Bathurst, Bayside, Bega Valley, Bellingen, Blacktown, Blue Mountains, Burwood, Campbelltown, Canada Bay, Canterbury Bankstown, Central Coast, Cessnock, Clarence Valley, Coffs Harbour, Cowra, Cumberland, Forbes, Gwydir, Hunter's Hill, Inner West, Kempsey, Kiama, Ku-ring-gai, Lake Macquarie, Leeton, Lismore, Lithgow, Liverpool, MidCoast, Moree Plains, Newcastle, Northern Beaches, Penrith, Port Macquarie-Hastings, Port Stephens, Queanbeyan-Palerang, Ryde, Shoalhaven, Snowy Valleys, Strathfield, Sydney, The Hills, Tweed, Upper Hunter, Willoughby, Wollongong, Woollahra
+Armidale, Ballina, Bathurst, Bayside, Bega Valley, Bellingen, Blacktown, Blue Mountains, Burwood, Campbelltown, Canada Bay, Canterbury Bankstown, Central Coast, Cessnock, Clarence Valley, Coffs Harbour, Cowra, Cumberland, Forbes, Gwydir, The Hills, Hornsby, Hunter's Hill, Inner West, Kempsey, Kiama, Ku-ring-gai, Lake Macquarie, Lane Cove, Leeton, Lismore, Lithgow, Liverpool, MidCoast, Moree Plains, Mosman, Newcastle, Northern Beaches, Penrith, Port Macquarie-Hastings, Port Stephens, Queanbeyan-Palerang, Ryde, Shoalhaven, Snowy Valleys, Strathfield, Sydney, Tweed, Upper Hunter, Willoughby, Wollondilly, Wollongong, Woollahra
 
-### Victoria (40)
+### Victoria (59)
 
-Ballarat, Banyule, Baw Baw, Bayside, Benalla, Cardinia, Casey, Colac Otway, Darebin, Glenelg, Hobsons Bay, Horsham, Hume, Kingston, Loddon, Macedon Ranges, Maribyrnong, Maroondah, Melton, Merri-bek, Mildura, Moira, Monash, Moonee Valley, Moorabool, Mornington Peninsula, Mount Alexander, Moyne, Murrindindi, Nillumbik, Port Phillip, Pyrenees, Stonnington, Surf Coast, Swan Hill, Wangaratta, Wellington, Whittlesea, Yarra, Yarra Ranges
+Alpine, Ballarat, Banyule, Baw Baw, Bayside, Benalla, Boroondara, Cardinia, Casey, Central Goldfields, Colac Otway, Corangamite, Darebin, Frankston, Gannawarra, Glen Eira, Glenelg, Greater Bendigo, Greater Geelong, Hindmarsh, Hobsons Bay, Horsham, Hume, Kingston, Knox, Loddon, Macedon Ranges, Mansfield, Maribyrnong, Maroondah, Melbourne, Melton, Merri-bek, Mildura, Moira, Monash, Moonee Valley, Moorabool, Mornington Peninsula, Mount Alexander, Moyne, Murrindindi, Nillumbik, Northern Grampians, Port Phillip, Pyrenees, Queenscliffe, Southern Grampians, Stonnington, Strathbogie, Surf Coast, Swan Hill, Wangaratta, Wellington, Whitehorse, Whittlesea, Yarra, Yarra Ranges, Yarriambiack
 
-### Queensland (14)
+### Queensland (16)
 
-Brisbane, Bundaberg, Cassowary Coast, Fraser Coast, Gladstone, Gold Coast, Gympie, Livingstone, Logan, Mackay, Moreton Bay, Redland, South Burnett, Sunshine Coast
+Brisbane, Bundaberg, Cassowary Coast, Fraser Coast, Gladstone, Gold Coast, Gympie, Hinchinbrook, Livingstone, Logan, Mackay, Moreton Bay, Redland, Scenic Rim, South Burnett, Sunshine Coast
 
-### Western Australia (13)
+### Western Australia (20)
 
-Bassendean, Bayswater, Belmont, Gosnells, Joondalup, Kalamunda, Kwinana, Mandurah, Rockingham, Serpentine Jarrahdale, South Perth, Stirling, Swan
+Armadale, Bassendean, Bayswater, Belmont, Bunbury, Cambridge, Canning, Cockburn, Gosnells, Joondalup, Kalamunda, Kwinana, Mandurah, Murray, Rockingham, Serpentine Jarrahdale, South Perth, Stirling, Swan, Vincent
 
-### Tasmania (2)
+### Tasmania (4)
 
-Hobart, Launceston
+Clarence, Glenorchy, Hobart, Launceston
 
 ### Australian Capital Territory (1)
 
@@ -36,15 +36,16 @@ Canberra
 
 ### Where the data comes from
 
-| Source                                                  | Councils |
-| ------------------------------------------------------- | -------- |
-| Council websites on the OpenCities platform             | 55       |
-| South Australia's My Local Services (state service)     | 44       |
-| waste-info.com.au calendars                             | 36       |
-| IntraMaps property maps                                 | 12       |
-| Councils' own lookups (Casey, Sydney, Stirling, others) | 10       |
-| Councils' map layers (Launceston, Newcastle, others)    | 6        |
-| Open datasets (Brisbane, Liverpool, ACT)                | 3        |
+| Source                                                    | Councils |
+| --------------------------------------------------------- | -------- |
+| Council websites on the OpenCities platform               | 60       |
+| South Australia's My Local Services (state service)       | 49       |
+| waste-info.com.au calendars                               | 38       |
+| Councils' own lookups (Casey, Sydney, Geelong, others)    | 25       |
+| IntraMaps property maps                                   | 12       |
+| Zone files councils publish (Bendigo, Frankston, others)  | 9        |
+| Councils' map layers (Launceston, Newcastle, others)      | 8        |
+| Open datasets (Brisbane, Melbourne, Liverpool, ACT)       | 4        |
 
 ## Next
 
@@ -53,7 +54,8 @@ Tracked as issues on GitHub:
 - [ ] **More IntraMaps councils** ([#1](https://github.com/dan-garden/bin-days/issues/1)). Twelve are done. Wanneroo, Greater Dandenong and Melville need an access key we don't have.
 - [ ] **Councils whose map service gives a weekday and "week 1 or 2"** ([#2](https://github.com/dan-garden/bin-days/issues/2)). Newcastle, Moonee Valley, Yarra and Bassendean are done, using dates or formulas the councils publish themselves. Wyndham and Parramatta still need a date from the council's calendar; Sutherland, Wingecarribee, Albany and Mundaring are blocked for other reasons, listed on the issue.
 - [ ] **More councils with their own lookup** ([#3](https://github.com/dan-garden/bin-days/issues/3)). All done except Townsville, which has no way from an address to its property.
-- [ ] **Seven South Australian councils** are in the state service but did not pass an end-to-end check: Barunga West, Campbelltown, Ceduna, Elliston, Karoonda East Murray, Mount Remarkable, Southern Mallee.
+- [ ] **Councils another bin day site covers and we don't** ([#11](https://github.com/dan-garden/bin-days/issues/11)). 39 of the 66 are done. Campaspe, Albany and Byron have a usable source and are next; the rest refuse our requests, need an access key, or publish only a calendar. The issue has the reason for each.
+- [ ] **Two South Australian councils** are in the state service but did not pass an end-to-end check: Ceduna and Karoonda East Murray.
 
 [docs/council-candidates.md](docs/council-candidates.md) has earlier research on about 40 large councils.
 
@@ -62,6 +64,14 @@ Tracked as issues on GitHub:
 - **No Northern Territory yet.**
 - **South Australian councils are matched by map zone, not by address.** An address that geocodes to the wrong side of a zone boundary gets its neighbour's days. Fortnightly weeks there are worked out from a rule that was checked against one council's published dates.
 - **Cardinia's dates are counted from 2017.** Its map layer gives each bin a start date from then and a cycle; that hasn't been checked against the council's current calendar.
+- **Councils read from a zone file are matched by map zone, not by address** (Bendigo, Frankston, Glen Eira, Boroondara, Melbourne and others), with the same boundary caveat as South Australia.
+- **City of Melbourne's zones come from a dataset last updated in 2021.** It has general waste and recycling only, and its site refuses our requests, so the days could not be checked against the council's current page.
+- **Corangamite, Central Goldfields and Yarriambiack are read from datasets several years old.** Their fortnights were checked against each council's current calendar, but zone boundaries were not.
+- **Some bins are left out because their source has no dates for them:** glass in Corangamite, Hindmarsh and Yarriambiack, the optional green bin in Central Goldfields, and St Arnaud's food and garden bin (Northern Grampians).
+- **Strathbogie publishes a new zone dataset each July,** so its address needs updating then.
+- **Armadale says only "this week" or "next week" for recycling.** That is read as Monday to Sunday; a lookup made on a Sunday may be a week out.
+- **Mosman, Canning and Southern Grampians (organics) only give the next date** for some bins.
+- **Alpine and Mansfield's cycles come from the councils' waste pages,** not from the lookup, which gives only the next date.
 - **Northern Beaches' fortnights were read from the council's 2026 calendars.** They need checking again when the 2027 calendars come out.
 - **Sunshine Coast is matched by street, not by house,** because that is all the council's own page uses.
 - **City of Stirling is matched by map point.** Where the address can only be placed on its street, the houses about 30 metres either side are asked instead, and the answer is used only if they agree.

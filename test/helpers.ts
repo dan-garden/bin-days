@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
+import { parseAustralianAddress } from '../src/core/address.js';
 import { NoopCache } from '../src/core/cache.js';
 import { toLocalDate } from '../src/core/date.js';
 import type { HttpClient } from '../src/core/http.js';
+import type { BinService, ResolvedAddress } from '../src/core/types.js';
 import type { AdapterContext } from '../src/councils/types.js';
 
 export const d = toLocalDate;
@@ -35,3 +37,18 @@ export const json = (body: unknown, status = 200) =>
 export function ctx(http: HttpClient, today = '2026-11-10'): AdapterContext {
   return { http, cache: new NoopCache(), today: d(today) };
 }
+
+/** An address as the service hands it to an adapter, optionally located on the map. */
+export function resolved(input: string, latitude?: number, longitude?: number): ResolvedAddress {
+  return {
+    input,
+    parts: parseAustralianAddress(input),
+    ...(latitude != null && longitude != null ? { latitude, longitude } : {}),
+  };
+}
+
+/** Each bin's type and when it goes, for comparing a schedule in one go. */
+export const recurrences = (schedule: { services: BinService[] }) =>
+  schedule.services.map((service) => [service.type, service.recurrence]);
+
+export const text = (body: string) => new Response(body);

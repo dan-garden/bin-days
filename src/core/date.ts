@@ -119,7 +119,7 @@ export function today(timeZone: string, now: Date = new Date()): LocalDate {
 
 /**
  * Parse Australian day-first dates such as `13/11/2026`, `Fri 13/11/2026`,
- * `13-11-2026`, `Friday 13 November 2026` or `13 Nov 2026`.
+ * `13-11-2026`, `Friday 13 November 2026`, `13 Nov 2026` or `13-Nov-2026`.
  */
 export function parseAustralianDate(text: string): LocalDate | undefined {
   const s = text.trim();
@@ -133,12 +133,21 @@ export function parseAustralianDate(text: string): LocalDate | undefined {
     return safe(year, Number(numeric[2]), Number(numeric[1]));
   }
 
-  const named = /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,})\.?,?\s+(\d{4})/.exec(s);
+  const named = /(\d{1,2})(?:st|nd|rd|th)?[\s-]+([A-Za-z]{3,})\.?,?[\s-]+(\d{4})/.exec(s);
   if (named) {
     const month = MONTHS.indexOf(named[2]!.slice(0, 3).toLowerCase()) + 1;
     if (month > 0) return safe(Number(named[3]), month, Number(named[1]));
   }
   return undefined;
+}
+
+/** Parse a date given without its year ("Tuesday 17th November") as the one nearest `today`. */
+export function parseDateNear(text: string, today: LocalDate): LocalDate | undefined {
+  const year = Number(today.slice(0, 4));
+  return [year - 1, year, year + 1]
+    .map((y) => parseAustralianDate(`${text.trim()} ${y}`))
+    .filter((date) => date !== undefined)
+    .sort((a, b) => Math.abs(daysBetween(today, a)) - Math.abs(daysBetween(today, b)))[0];
 }
 
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
