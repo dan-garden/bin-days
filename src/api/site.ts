@@ -322,6 +322,7 @@ To answer "what bin day is it?" or "which bins go out this week?" for an Austral
 ## API
 
 - [Bin collection days for an address](${origin}/v1/collections?address=833%20Southport%20Nerang%20Road%2C%20Nerang%20QLD): \`GET /v1/collections?address=<street address>\`. Optional \`date=YYYY-MM-DD\`, or \`from\` and \`to\` for a range (the default is the next two weeks). The response has \`next\` (the next collection day and its bins), \`days\` (each collection day in the range) and \`services\` (each bin and how often it is collected). A bin's \`type\` is one of general, recycling, organics, food, glass, bulky or other. \`confidence\` is "confirmed" when the council stated the date and "projected" when it was worked out from the cycle, which public holidays can shift.
+- [Calendar feed for an address](${origin}/v1/calendar.ics?address=833%20Southport%20Nerang%20Road%2C%20Nerang%20QLD): \`GET /v1/calendar.ics?address=<street address>\`. The next year of collection days as an iCalendar feed that calendar apps can subscribe to. Optional \`reminder=18\` adds a reminder at that hour the evening before.
 - [Supported councils](${origin}/v1/councils): \`GET /v1/councils\`, optionally \`?state=QLD\`.
 - [Map of supported areas](${origin}/v1/coverage): GeoJSON, one feature per council.
 - [OpenAPI specification](${origin}/openapi.json) and [interactive documentation](${origin}/docs).

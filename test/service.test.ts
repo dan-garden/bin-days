@@ -217,6 +217,31 @@ describe('HTTP API', () => {
     expect(body.days.map((x: { date: string }) => x.date)).toEqual(['2026-11-13']);
   });
 
+  it('GET /v1/calendar.ics gives a year of collection days to subscribe to', async () => {
+    const res = await app.request('/v1/calendar.ics?address=1%20Test%20St&reminder=18');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('text/calendar; charset=utf-8');
+    const lines = (await res.text()).split('\r\n');
+    expect(lines.slice(0, 2)).toEqual(['BEGIN:VCALENDAR', 'VERSION:2.0']);
+    // No line is longer than the format allows.
+    expect(Math.max(...lines.map((line) => Buffer.byteLength(line)))).toBeLessThanOrEqual(75);
+    expect(lines.filter((line) => line === 'BEGIN:VEVENT').length).toBeGreaterThan(50);
+    const first = lines.slice(lines.indexOf('BEGIN:VEVENT'), lines.indexOf('END:VEVENT'));
+    expect(first).toContain('DTSTART;VALUE=DATE:20261113');
+    expect(first).toContain('DTEND;VALUE=DATE:20261114');
+    // 6 pm the evening before is six hours before the day starts.
+    expect(first).toContain('TRIGGER:-PT6H');
+    expect(first.find((line) => line.startsWith('UID:'))).toMatch(/^UID:2026-11-13-[0-9a-f]{12}@/);
+  });
+
+  it('leaves the reminder out of the calendar unless asked', async () => {
+    const res = await app.request('/v1/calendar.ics?address=1%20Test%20St');
+    expect(await res.text()).not.toContain('VALARM');
+    expect((await app.request('/v1/calendar.ics?address=1%20Test%20St&reminder=25')).status).toBe(
+      400,
+    );
+  });
+
   it('GET /health reports the cache in use and that it works', async () => {
     const res = await app.request('/health');
     expect(await res.json()).toEqual({ ok: true, cache: { backend: 'memory', working: true } });

@@ -23,6 +23,8 @@ import '@mantine/core/styles/Alert.css';
 import '@mantine/core/styles/Breadcrumbs.css';
 import '@mantine/core/styles/Popover.css';
 import '@mantine/core/styles/Tooltip.css';
+import '@mantine/core/styles/InlineInput.css';
+import '@mantine/core/styles/Checkbox.css';
 import './styles.css';
 import { Anchor, createTheme, type MantineColorsTuple, MantineProvider } from '@mantine/core';
 import { LazyMotion, MotionConfig } from 'motion/react';

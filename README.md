@@ -36,12 +36,15 @@ npm run cli -- "833 Southport Nerang Road, Nerang QLD"
 | Endpoint                             | Returns                                         |
 | ------------------------------------ | ----------------------------------------------- |
 | `GET /v1/collections?address=<text>` | Collection days and bins for that address       |
+| `GET /v1/calendar.ics?address=<text>` | The next year of collection days as a calendar feed |
 | `GET /v1/councils`                   | The councils supported so far                   |
 | `GET /v1/coverage`                   | A map (GeoJSON) of the areas those councils cover |
 
 On the website, `/address/<address>` opens straight on that address's bins, so a result can be shared as a link.
 
 `/v1/collections` also takes `date=YYYY-MM-DD`, or `from` and `to` for a range. Without them you get the next two weeks.
+
+`/v1/calendar.ics` is for calendar apps to subscribe to, so the calendar keeps itself up to date. Add `reminder=18` for a reminder at 6 pm the evening before each collection. The website's "Add to your calendar" buttons use it.
 
 ```jsonc
 {
