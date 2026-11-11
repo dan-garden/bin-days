@@ -11,9 +11,13 @@ const REMINDER_HOUR = 18;
  */
 export function SaveAndShare({ address }: { address: string }) {
   const [remind, setRemind] = useState(true);
+  const path = calendarPath(address, remind ? REMINDER_HOUR : undefined);
   // Calendar apps subscribe to a `webcal:` address, and fetch it again every so often.
-  const feed = `webcal://${location.host}${calendarPath(address, remind ? REMINDER_HOUR : undefined)}`;
-  const google = `https://calendar.google.com/calendar/r?${new URLSearchParams({ cid: feed })}`;
+  // Google fetches the feed itself, so it is given the ordinary address.
+  const feed = `webcal://${location.host}${path}`;
+  const google = `https://calendar.google.com/calendar/r?${new URLSearchParams({
+    cid: location.origin + path,
+  })}`;
 
   return (
     <Stack gap="xs">
@@ -55,6 +59,10 @@ export function SaveAndShare({ address }: { address: string }) {
           label="Remind me at 6 pm the evening before"
           checked={remind}
           onChange={(event) => setRemind(event.currentTarget.checked)}
+          description={
+            remind &&
+            'Apple: turn off “Remove alarms” when you subscribe. Google ignores this, so set a notification for the calendar in its settings.'
+          }
         />
       </div>
       <div className="action-card">
