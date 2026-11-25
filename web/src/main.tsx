@@ -1,4 +1,4 @@
-import '@fontsource-variable/outfit';
+import '@fontsource-variable/overpass';
 // Only the styles of the components the page uses, which is a fraction of the full stylesheet.
 // A component that looks unstyled is missing its line here.
 import '@mantine/core/styles/baseline.css';
@@ -47,8 +47,8 @@ const brand: MantineColorsTuple = [
 ];
 
 const theme = createTheme({
-  fontFamily: "'Outfit Variable', system-ui, sans-serif",
-  headings: { fontFamily: "'Outfit Variable', system-ui, sans-serif", fontWeight: '700' },
+  fontFamily: "'Overpass Variable', system-ui, sans-serif",
+  headings: { fontFamily: "'Overpass Variable', system-ui, sans-serif", fontWeight: '700' },
   colors: { brand },
   primaryColor: 'brand',
   primaryShade: 8,

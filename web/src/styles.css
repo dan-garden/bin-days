@@ -1,25 +1,33 @@
 /* Page-level styling. Components come from Mantine; this file is layout, the bins and the mood. */
 
 :root {
+  /* The lid colours are the brand: the same paint as the bins (web/src/lib.ts). */
+  --lid-red: #e03131;
+  --lid-yellow: #fcc419;
+  --lid-lime: #82c91e;
+  --lid-purple: #9c36b5;
+  --lids: linear-gradient(
+    90deg,
+    var(--lid-red) 0 25%,
+    var(--lid-yellow) 25% 50%,
+    var(--lid-lime) 50% 75%,
+    var(--lid-purple) 75%
+  );
   --bin-body: #2f3b36;
   --bin-wheel: #1b1f1d;
-  --page: #f5f7f1;
-  --card: rgb(255 255 255 / 0.78);
-  --card-border: rgb(20 40 30 / 0.08);
-  --glow-1: rgb(130 201 30 / 0.28);
-  --glow-2: rgb(252 196 25 / 0.24);
-  --glow-3: rgb(224 49 49 / 0.1);
+  --page: #f6f5f0;
+  --card: #fff;
+  --card-border: rgb(30 30 20 / 0.1);
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -16px rgb(0 0 0 / 0.18);
 }
 
 [data-mantine-color-scheme="dark"] {
   --bin-body: #4a5a53;
   --bin-wheel: #0c0f0e;
-  --page: #0f1412;
-  --card: rgb(28 36 32 / 0.72);
-  --card-border: rgb(255 255 255 / 0.08);
-  --glow-1: rgb(130 201 30 / 0.13);
-  --glow-2: rgb(252 196 25 / 0.08);
-  --glow-3: rgb(224 49 49 / 0.07);
+  --page: #121313;
+  --card: #1b1d1d;
+  --card-border: rgb(255 255 255 / 0.09);
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
 }
 
 /* Mantine's "dimmed" grey is too faint on these backgrounds to read comfortably. */
@@ -45,16 +53,14 @@ body {
   background: var(--page);
 }
 
-/* Soft lid-coloured light behind everything. On the body, so it is there from the first paint. */
+/* The four lids along the top of every page. On the body, so it is there from the first paint. */
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(60rem 36rem at 8% -8%, var(--glow-1), transparent 60%),
-    radial-gradient(48rem 32rem at 100% 0%, var(--glow-2), transparent 62%),
-    radial-gradient(50rem 30rem at 50% 110%, var(--glow-3), transparent 60%);
+  inset: 0 0 auto;
+  z-index: 10;
+  height: 5px;
+  background: var(--lids);
 }
 
 .page {
@@ -138,8 +144,22 @@ body::before {
 
 .hero-title {
   font-size: clamp(2.5rem, 8vw, 4.75rem);
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.04em;
+}
+
+/* Section headings get a short stripe of the four lids, the site's mark. */
+.coverage > h2::after,
+.faq h2::after,
+.article h2::after {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 5px;
+  margin-top: 0.5rem;
+  border-radius: 3px;
+  background: var(--lids);
 }
 
 .hero-lede {
@@ -223,14 +243,26 @@ body::before {
 .coverage-map-frame,
 .day-row,
 .action-card,
-.service-chip {
+.service-chip,
+.faq-item {
   background: var(--card);
   border: 1px solid var(--card-border);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--card-shadow);
 }
 
+/* The answer reads like a kerbside sign: a band of the lids going out, then the day. */
 .next-card {
-  box-shadow: 0 24px 60px -30px rgb(20 60 30 / 0.4);
+  position: relative;
+  overflow: hidden;
+  padding-top: calc(var(--mantine-spacing-xl) + 0.5rem);
+}
+
+.next-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 10px;
+  background: var(--lids);
 }
 
 .eyebrow {
@@ -251,8 +283,21 @@ body::before {
   letter-spacing: -0.03em;
 }
 
+/* Each bin going out sits on a plate in its own lid colour. */
 .next-bin {
-  max-width: 7.5rem;
+  max-width: 8.5rem;
+  min-width: 6.5rem;
+  padding: 0.75rem 0.75rem 0.6rem;
+  border-radius: 0.9rem;
+  border-top: 5px solid var(--lid);
+  background: color-mix(in srgb, var(--lid) 12%, transparent);
+}
+
+@media (max-width: 30em) {
+  .next-bin {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
 .timeline {
@@ -264,11 +309,22 @@ body::before {
 }
 
 .day-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 1.1rem;
+  padding: 0.75rem 1rem 0.75rem 1.4rem;
+  border-radius: 0.9rem;
+  overflow: hidden;
+}
+
+/* The day's lids down the left edge. */
+.day-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--lids);
 }
 
 .day-date {
@@ -305,7 +361,7 @@ body::before {
   justify-content: space-between;
   gap: 0.75rem 1.5rem;
   padding: 1rem 1.25rem;
-  border-radius: 1.1rem;
+  border-radius: 0.9rem;
 }
 
 .action-card-wide {
@@ -570,8 +626,105 @@ body::before {
   max-width: 40rem;
 }
 
+/* Common questions: each opens to its answer. */
+.faq {
+  margin-top: clamp(3rem, 8vw, 5rem);
+  max-width: 46rem;
+}
+
+.faq-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.faq-item {
+  border-radius: 0.9rem;
+  padding: 0 1.1rem;
+}
+
+.faq-item summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::after {
+  content: "+";
+  flex: none;
+  font-weight: 400;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--mantine-color-dimmed);
+}
+
+.faq-item[open] summary::after {
+  content: "–";
+}
+
+.faq-item summary:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+/* Written pages and answers. */
+.article {
+  max-width: 42rem;
+  margin-inline: auto;
+}
+
+.prose {
+  line-height: 1.65;
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose > :last-child {
+  margin-bottom: 0;
+}
+
+.prose h2 {
+  margin: 2.25rem 0 0.75rem;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.prose h3 {
+  margin: 1.5rem 0 0.4rem;
+  font-size: 1.15rem;
+}
+
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0 0 1rem;
+}
+
+.prose li + li {
+  margin-top: 0.35rem;
+}
+
+.prose a {
+  color: var(--mantine-color-anchor);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
+}
+
+.faq-item .prose {
+  padding-bottom: 0.9rem;
 }

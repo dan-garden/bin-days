@@ -22,7 +22,7 @@ export function shortCouncilName(name: string): string {
   return name
     .replace(/ \(.*\)$/, '')
     .replace(
-      /^(The )?(Rural )?(City|Town|Shire|Municipality|District Council|Regional Council) of /,
+      /^(The )?(Rural )?(City|Town|Shire|Municipality|District Council|Regional Council|Borough) of /,
       '',
     )
     .replace(/ ((Rural )?City|Regional|District|Shire|Municipal|Town|Borough)? ?Council$/, '');
@@ -104,11 +104,13 @@ export function addressFromPath(path: string): string | undefined {
 
 /** The heading and one-line introduction of each kind of page, shared by the server and the UI so they match exactly. */
 export function pageHeading(page: {
+  heading?: { title: string; lede: string } | undefined;
   council?: { name: string } | undefined;
   suburb?: { name: string } | undefined;
   state?: AustralianState | undefined;
   address?: string | undefined;
 }): { title: string; lede: string } {
+  if (page.heading) return page.heading;
   if (page.address) {
     return {
       title: 'Which bins go out?',

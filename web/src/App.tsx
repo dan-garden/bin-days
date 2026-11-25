@@ -12,13 +12,7 @@ import {
 } from '@mantine/core';
 import { AnimatePresence, m } from 'motion/react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  councilPath,
-  pageHeading,
-  STATE_NAMES,
-  shortCouncilName,
-  statePath,
-} from '../../src/councils/names.js';
+import { pageHeading } from '../../src/councils/names.js';
 import {
   ApiError,
   type BinDaysResult,
@@ -28,8 +22,10 @@ import {
   pageData,
 } from './api.js';
 import { AddressForm } from './components/AddressForm.js';
+import { ArticleBody } from './components/ArticleBody.js';
 import { BinIcon } from './components/BinIcon.js';
 import { CouncilAbout } from './components/CouncilAbout.js';
+import { Faq } from './components/Faq.js';
 import { HomeDirectory } from './components/HomeDirectory.js';
 import { Outbound } from './components/Outbound.js';
 import { StateDirectory } from './components/StateDirectory.js';
@@ -38,6 +34,13 @@ import { ThemeToggle } from './components/ThemeToggle.js';
 /** The last address submitted, so a returning visitor sees their bins straight away. */
 const REMEMBERED = 'bin-days:address';
 const REPO = 'https://github.com/dan-garden/bin-days';
+/** The site's own pages, linked from every page's footer. */
+const SITE_LINKS = [
+  ['/guides', 'Guides'],
+  ['/about', 'About'],
+  ['/privacy', 'Privacy'],
+  ['/contact', 'Contact'],
+] as const;
 
 /** The council that address turned out to be in, so it is only re-run where it belongs. */
 const REMEMBERED_COUNCIL = 'bin-days:council';
@@ -65,8 +68,9 @@ const Result = lazy(() =>
 /** Set when this is a council's landing page, e.g. `/bin-days/qld/brisbane`. */
 const page = pageData();
 
-/** The page's heading, and the trail back to the home page, for each kind of page. */
-const isHome = !page.council && !page.state;
+/** A written page (a guide, about, privacy, contact) rather than a place to look an address up. */
+const article = page.article;
+const isHome = !page.council && !page.state && !article;
 /** A shared link names its own address, which is looked up without replacing the visitor's own. */
 const shared = page.address;
 
@@ -80,20 +84,8 @@ function returningTo(): string {
   return belongsHere ? stored(REMEMBERED) : '';
 }
 const heading = pageHeading(page);
-const trail: Array<{ name: string; href?: string }> = page.council
-  ? [
-      { name: STATE_NAMES[page.council.state], href: statePath(page.council.state) },
-      // A suburb's page sits under its council's.
-      ...(page.suburb
-        ? [
-            { name: shortCouncilName(page.council.name), href: councilPath(page.council) },
-            { name: page.suburb.name },
-          ]
-        : [{ name: shortCouncilName(page.council.name) }]),
-    ]
-  : page.state
-    ? [{ name: STATE_NAMES[page.state] }]
-    : [];
+/** The breadcrumb after the home page, as the server worked it out; the last step is this page. */
+const trail = page.trail ?? [];
 
 type Lookup =
   | { status: 'idle' }
@@ -168,6 +160,9 @@ export function App() {
           </Group>
         </Anchor>
         <Group gap="md">
+          <Anchor href="/guides" c="inherit" size="sm" underline="hover" visibleFrom="xs">
+            Guides
+          </Anchor>
           <Anchor
             href={isHome ? '#coverage' : '/#coverage'}
             c="inherit"
@@ -192,13 +187,13 @@ export function App() {
             <Anchor href="/" size="sm">
               Bin Days
             </Anchor>
-            {trail.map((step) =>
-              step.href ? (
-                <Anchor key={step.name} href={step.href} size="sm">
+            {trail.map((step, index) =>
+              index < trail.length - 1 ? (
+                <Anchor key={step.path} href={step.path} size="sm">
                   {step.name}
                 </Anchor>
               ) : (
-                <Text key={step.name} size="sm" c="dimmed" aria-current="page">
+                <Text key={step.path} size="sm" c="dimmed" aria-current="page">
                   {step.name}
                 </Text>
               ),
@@ -235,65 +230,74 @@ export function App() {
             <Text className="hero-lede" c="dimmed">
               {heading.lede}
             </Text>
-            <AddressForm
-              address={address}
-              loading={lookup.status === 'loading'}
-              onSubmit={find}
-              onClear={clear}
-            />
+            {!article && (
+              <AddressForm
+                address={address}
+                loading={lookup.status === 'loading'}
+                onSubmit={find}
+                onClear={clear}
+              />
+            )}
           </div>
         </section>
 
-        <section className="result" aria-live="polite">
-          <AnimatePresence mode="wait">
-            {lookup.status === 'loading' && (
-              <m.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <Skeleton h={14} w="60%" mb="lg" />
-                <Skeleton h={190} radius="xl" />
-              </m.div>
-            )}
-            {lookup.status === 'done' && (
-              <Suspense key={lookup.result.address.matched} fallback={null}>
-                <Result result={lookup.result} />
-              </Suspense>
-            )}
-            {lookup.status === 'failed' && (
-              <m.div
-                key="failed"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <Failure error={lookup.error} onPick={find} />
-              </m.div>
-            )}
-          </AnimatePresence>
-        </section>
-
-        {council && (
-          <CouncilAbout
-            // A different council gets a fresh map rather than a flight across the country.
-            key={council.id}
-            council={council}
-            nearby={council.id === page.council?.id ? (page.nearby ?? []) : []}
-            pin={pin}
-            // The page's own suburb and links, unless a lookup has moved on to another council.
-            {...(council.id === page.council?.id
-              ? { suburb: page.suburb, suburbs: page.suburbs ?? [] }
-              : {})}
-          />
-        )}
-        {/* Browsing for a council: the whole section before a lookup, a short list after one.
-            A council's own page leaves it out and links to its state instead. */}
-        {page.state ? (
-          <StateDirectory state={page.state} councils={councils} compact={!!council} />
+        {article ? (
+          <ArticleBody article={article} />
         ) : (
-          !page.council && <HomeDirectory councils={councils} compact={!!council} />
+          <>
+            <section className="result" aria-live="polite">
+              <AnimatePresence mode="wait">
+                {lookup.status === 'loading' && (
+                  <m.div
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <Skeleton h={14} w="60%" mb="lg" />
+                    <Skeleton h={190} radius="xl" />
+                  </m.div>
+                )}
+                {lookup.status === 'done' && (
+                  <Suspense key={lookup.result.address.matched} fallback={null}>
+                    <Result result={lookup.result} />
+                  </Suspense>
+                )}
+                {lookup.status === 'failed' && (
+                  <m.div
+                    key="failed"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <Failure error={lookup.error} onPick={find} />
+                  </m.div>
+                )}
+              </AnimatePresence>
+            </section>
+
+            {council && (
+              <CouncilAbout
+                // A different council gets a fresh map rather than a flight across the country.
+                key={council.id}
+                council={council}
+                nearby={council.id === page.council?.id ? (page.nearby ?? []) : []}
+                pin={pin}
+                // The page's own suburb, bins and links, unless a lookup has moved on to another council.
+                {...(council.id === page.council?.id
+                  ? { suburb: page.suburb, suburbs: page.suburbs ?? [], bins: page.bins ?? [] }
+                  : {})}
+              />
+            )}
+            {page.faq && council?.id === page.council?.id && <Faq faq={page.faq} />}
+            {/* Browsing for a council: the whole section before a lookup, a short list after one.
+                A council's own page leaves it out and links to its state instead. */}
+            {page.state ? (
+              <StateDirectory state={page.state} councils={councils} compact={!!council} />
+            ) : (
+              !page.council && <HomeDirectory councils={councils} compact={!!council} />
+            )}
+          </>
         )}
       </main>
 
@@ -314,6 +318,13 @@ export function App() {
           </Outbound>
           .
         </Text>
+        <Group gap="md" mt="sm">
+          {SITE_LINKS.map(([href, name]) => (
+            <Anchor key={href} href={href} size="sm" c="dimmed">
+              {name}
+            </Anchor>
+          ))}
+        </Group>
       </footer>
     </Container>
   );

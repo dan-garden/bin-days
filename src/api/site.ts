@@ -1,35 +1,46 @@
 import type { Context, Hono } from 'hono';
-import { AUSTRALIAN_STATES, type AustralianState } from '../core/types.js';
+import { ARTICLES } from '../content/articles.js';
+import { AUSTRALIAN_STATES } from '../core/types.js';
 import {
   addressFromPath,
-  addressPath,
   councilPath,
   PAGES_PATH,
-  pageHeading,
   STATE_NAMES,
-  shortCouncilName,
-  sourceDescription,
   statePath,
   suburbPath,
 } from '../councils/names.js';
 import type { CouncilRegistry } from '../councils/registry.js';
-import { findSuburb, nearestSuburbs, type Suburb, suburbsOf } from '../councils/suburbs.js';
+import { findSuburb, suburbsOf } from '../councils/suburbs.js';
 import type { CouncilInfo } from '../councils/types.js';
-import { boundsOf, centreOf, distanceKm } from '../geo/bounds.js';
 import type { Coverage } from '../service.js';
+import {
+  addressPage,
+  articlePage,
+  byState,
+  councilPage,
+  homePage,
+  nearestCouncils,
+  statePage,
+  suburbPage,
+} from './pages.js';
+import { escapeHtml, type Page, renderPage, SITE_NAME } from './render.js';
 import { SHELL } from './shell.generated.js';
 
+export type { PageData } from './pages.js';
+
 /**
- * The public website around the API: the home page, a page per state, a page
- * per council, and the files search engines and language models look for
- * (`/sitemap.xml`, `/robots.txt`, `/llms.txt`).
+ * The public website around the API: the home page, a page per state, council
+ * and suburb, the written pages (guides, about, privacy, contact), and the
+ * files search engines and language models look for (`/sitemap.xml`,
+ * `/robots.txt`, `/llms.txt`).
  *
  * The UI is a client-rendered app, which crawlers and language models read
  * poorly. So each page is the UI's HTML with real content put into it on the
- * server: its own title and description, structured data, and plain HTML that
- * says what the page is and links to the pages around it. Everything here is
- * generated from the council registry, so adding a council adds its page, its
- * links and its sitemap entry.
+ * server (`render.ts`): its own title and description, structured data, and
+ * plain HTML that says what the page is and links to the pages around it. The
+ * pages themselves are built in `pages.ts`, from the council registry and the
+ * written content in `src/content/`, so adding a council or an article adds its
+ * page, its links and its sitemap entry.
  */
 export interface SiteOptions {
   /** The site's canonical origin, e.g. `https://binday.example`. Defaults to the request's own. */
@@ -40,324 +51,12 @@ export interface SiteOptions {
   coverage?: () => Promise<Coverage>;
 }
 
-const SITE_NAME = 'Bin Days';
-const HEAD = /<!--seo:head-->[\s\S]*?<!--\/seo:head-->/;
-const BODY = '<!--seo:body-->';
-/** How many neighbouring councils a council's page links to. */
-const NEARBY = 6;
-
-type CouncilLink = Pick<CouncilInfo, 'id' | 'name' | 'state'>;
-
-/** What the UI needs to know about the page it was served on. */
-export interface PageData {
-  /** Set on a state's page. */
-  state?: AustralianState;
-  /** Set on a shared link to one address, which the UI looks up straight away. */
-  address?: string;
-  /** Set on a council's page. */
-  council?: Pick<CouncilInfo, 'id' | 'name' | 'state' | 'website' | 'platform'>;
-  /** The closest other councils, nearest first. */
-  nearby?: CouncilLink[];
-  /** Set on a suburb's page, along with its council. */
-  suburb?: Suburb;
-  /** Suburbs to link to: all of the council's on its own page, the nearest ones on a suburb's. */
-  suburbs?: string[];
-  /** Every supported council, on the pages that list them, so the UI needn't fetch them. */
-  councils?: CouncilLink[];
-  /** How many councils are supported. The UI asks for the coverage map by this number, so a
-   * browser's saved copy is not reused once a council has been added. */
-  councilCount?: number;
-}
-
-const escapeHtml = (text: string) =>
-  text.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-
-/** JSON that is safe inside a `<script>` element. */
-const scriptJson = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
-
-const link = (href: string, text: string) =>
-  `<a href="${escapeHtml(href)}">${escapeHtml(text)}</a>`;
-const asLink = ({ id, name, state }: CouncilLink): CouncilLink => ({ id, name, state });
-const suburbLinks = (council: CouncilLink, suburbs: string[]) =>
-  `<ul>${suburbs.map((name) => `<li>${link(suburbPath(council, name), `${name} bin day`)}</li>`).join('')}</ul>`;
-const councilLinks = (councils: CouncilLink[]) =>
-  `<ul>${councils.map((c) => `<li>${link(councilPath(c), `${shortCouncilName(c.name)} bin day`)}</li>`).join('')}</ul>`;
-
-interface Page {
-  path: string;
-  title: string;
-  description: string;
-  /** The trail from the home page down to this page, for the breadcrumb. */
-  trail: Array<{ name: string; path: string }>;
-  data: PageData;
-  /** Keep the page out of search results. */
-  private?: boolean;
-  /** Plain HTML shown until the UI starts, and all that non-JavaScript readers get. */
-  body: string[];
-}
-
-function renderPage(shell: string, origin: string, page: Page, councilCount: number): string {
-  const url = origin + page.path;
-  const meta = (attribute: string, name: string, content: string) =>
-    `<meta ${attribute}="${name}" content="${escapeHtml(content)}" />`;
-  const structuredData: object[] = [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      name: SITE_NAME,
-      url,
-      applicationCategory: 'UtilitiesApplication',
-      operatingSystem: 'Any',
-      description: page.description,
-      areaServed: page.data.council
-        ? {
-            '@type': 'AdministrativeArea',
-            name: `${page.data.council.name}, ${STATE_NAMES[page.data.council.state]}`,
-          }
-        : { '@type': 'Country', name: 'Australia' },
-      offers: { '@type': 'Offer', price: '0', priceCurrency: 'AUD' },
-    },
-  ];
-  if (page.trail.length > 1) {
-    structuredData.push({
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: page.trail.map((step, index) => ({
-        '@type': 'ListItem',
-        position: index + 1,
-        name: step.name,
-        item: origin + step.path,
-      })),
-    });
-  } else {
-    structuredData.push({
-      '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: SITE_NAME,
-      url: `${origin}/`,
-    });
-  }
-  const head = [
-    `<title>${escapeHtml(page.title)}</title>`,
-    meta('name', 'description', page.description),
-    page.private
-      ? meta('name', 'robots', 'noindex')
-      : `<link rel="canonical" href="${escapeHtml(url)}" />`,
-    meta('property', 'og:type', 'website'),
-    meta('property', 'og:site_name', SITE_NAME),
-    meta('property', 'og:title', page.title),
-    meta('property', 'og:description', page.description),
-    meta('property', 'og:url', url),
-    meta('property', 'og:locale', 'en_AU'),
-    meta('property', 'og:image', `${origin}/og-image.png`),
-    meta('property', 'og:image:width', '1200'),
-    meta('property', 'og:image:height', '630'),
-    meta('property', 'og:image:alt', `${SITE_NAME}: which bins go out this week?`),
-    meta('name', 'twitter:card', 'summary_large_image'),
-    ...structuredData.map(
-      (item) => `<script type="application/ld+json">${scriptJson(item)}</script>`,
-    ),
-    `<script id="page-data" type="application/json">${scriptJson({ ...page.data, councilCount })}</script>`,
-  ].join('\n    ');
-  const trail =
-    page.trail.length > 1
-      ? `<nav class="shell-trail">${page.trail
-          .map((step, index) =>
-            index < page.trail.length - 1 ? link(step.path, step.name) : escapeHtml(step.name),
-          )
-          .join(' › ')}</nav>`
-      : '';
-  // The top of the page, laid out with the UI's own styles, so the first paint already looks
-  // like the finished page and the UI takes over without a jump. The rest (`seo-more`) is for
-  // readers without JavaScript; the UI shows the same content its own way.
-  const { title, lede } = pageHeading(page.data);
-  const shellHtml = `<div class="shell">
-<div class="shell-topbar">${link('/', SITE_NAME)}</div>
-${trail}
-<div class="hero${page.trail.length > 1 ? ' hero-compact' : ''}">
-<div class="shell-bins"></div>
-<h1 class="hero-title">${escapeHtml(title)}</h1>
-<p class="hero-lede">${escapeHtml(lede)}</p>
-</div>
-</div>
-<div class="seo-more">${page.body.join('\n')}</div>`;
-  return shell.replace(HEAD, () => head).replace(BODY, () => shellHtml);
-}
-
-const HOME = { name: SITE_NAME, path: '/' };
-
-/** States that have at least one council, biggest first, each with its councils. */
-function byState(councils: CouncilInfo[]): Array<[AustralianState, CouncilInfo[]]> {
-  return AUSTRALIAN_STATES.map((state): [AustralianState, CouncilInfo[]] => [
-    state,
-    councils.filter((c) => c.state === state),
-  ])
-    .filter(([, list]) => list.length > 0)
-    .sort((a, b) => b[1].length - a[1].length);
-}
-
-function homePage(councils: CouncilInfo[]): Page {
-  const places = councils.map((c) => shortCouncilName(c.name));
-  const sample = ['Brisbane', 'Adelaide', 'Canberra', 'Gold Coast', 'Hobart'].filter((p) =>
-    places.includes(p),
-  );
-  const including = sample.length ? `, including ${sample.join(', ')}` : '';
-  const description = `Type your address to see your next bin collection day and which bins go out: general waste, recycling or green waste. Free for ${councils.length} Australian councils${including}.`;
-  return {
-    path: '/',
-    title: `${SITE_NAME}: which bins go out this week?`,
-    description,
-    trail: [HOME],
-    data: { councils: councils.map(asLink) },
-    body: [
-      `<p>${escapeHtml(description)}</p>`,
-      '<h2>Supported councils</h2>',
-      ...byState(councils).flatMap(([state, list]) => [
-        `<h3>${link(statePath(state), `${STATE_NAMES[state]} bin days`)}</h3>`,
-        councilLinks(list),
-      ]),
-      '<p>Developers and AI assistants: see <a href="/llms.txt">llms.txt</a> and the <a href="/docs">API documentation</a>.</p>',
-    ],
-  };
-}
-
-/** A shared link to one address: the home page, opened on that address's bins. */
-function addressPage(address: string, councils: CouncilInfo[]): Page {
-  const home = homePage(councils);
-  return {
-    ...home,
-    path: addressPath(address),
-    title: `Bin days for ${address}`,
-    description: `Which bins go out, and when, at ${address}.`,
-    data: { ...home.data, address },
-    private: true,
-  };
-}
-
-function statePage(state: AustralianState, councils: CouncilInfo[]): Page {
-  const name = STATE_NAMES[state];
-  const inState = councils.filter((c) => c.state === state);
-  const description = `Find your bin collection day in ${name}. Pick your council or type your address to see which bins go out this week, for ${inState.length} ${name} council${inState.length === 1 ? '' : 's'}.`;
-  return {
-    path: statePath(state),
-    title: `${name} bin days: find your council's collection day`,
-    description,
-    trail: [HOME, { name, path: statePath(state) }],
-    data: { state, councils: councils.map(asLink) },
-    body: [
-      `<p>${escapeHtml(description)}</p>`,
-      `<h2>Councils in ${escapeHtml(name)}</h2>`,
-      councilLinks(inState),
-      `<p>${link('/', 'Bin days in other states')}</p>`,
-    ],
-  };
-}
-
-function councilPage(council: CouncilInfo, nearby: CouncilLink[]): Page {
-  const place = shortCouncilName(council.name);
-  const state = STATE_NAMES[council.state];
-  const description = `Find your next bin day in ${place}, ${state}. Type your address to see when ${council.name} collects, and whether it's general waste, recycling or green waste this week.`;
-  const { id, name, website, platform } = council;
-  const suburbs = suburbsOf(id).map((suburb) => suburb.name);
-  return {
-    path: councilPath(council),
-    title: `${place} bin day: which bins go out this week?`,
-    description,
-    trail: [
-      HOME,
-      { name: state, path: statePath(council.state) },
-      { name: `${place} bin day`, path: councilPath(council) },
-    ],
-    data: {
-      council: {
-        id,
-        name,
-        state: council.state,
-        ...(website ? { website } : {}),
-        ...(platform ? { platform } : {}),
-      },
-      nearby,
-      suburbs,
-    },
-    body: [
-      `<p>${escapeHtml(description)}</p>`,
-      '<h2>How it works</h2>',
-      `<ol><li>Type your street address in ${escapeHtml(place)}.</li><li>We look your property up with ${escapeHtml(council.name)}.</li><li>You see your next collection day and which bins to put out, plus the weeks after.</li></ol>`,
-      `<p>The dates come from ${escapeHtml(sourceDescription(council))}.${website ? ` ${link(website, `${council.name} website`)}` : ''}</p>`,
-      ...(suburbs.length
-        ? [`<h2>Suburbs in ${escapeHtml(place)}</h2>`, suburbLinks(council, suburbs)]
-        : []),
-      ...(nearby.length
-        ? [`<h2>Councils near ${escapeHtml(place)}</h2>`, councilLinks(nearby)]
-        : []),
-      `<p>${link(statePath(council.state), `All ${state} councils`)}</p>`,
-    ],
-  };
-}
-
-/** How many nearby suburbs a suburb's page links to. */
-const NEARBY_SUBURBS = 12;
-
-function suburbPage(council: CouncilInfo, suburb: Suburb): Page {
-  const place = shortCouncilName(council.name);
-  const state = STATE_NAMES[council.state];
-  const description = `Find your next bin day in ${suburb.name}, ${state}. ${council.name} collects the bins in ${suburb.name}: type your address to see your collection day, and whether it's general waste, recycling or green waste this week.`;
-  const { id, name, website, platform } = council;
-  const nearby = nearestSuburbs(id, suburb, NEARBY_SUBURBS).map((other) => other.name);
-  return {
-    path: suburbPath(council, suburb.name),
-    title: `${suburb.name} bin day: which bins go out this week?`,
-    description,
-    trail: [
-      HOME,
-      { name: state, path: statePath(council.state) },
-      { name: `${place} bin day`, path: councilPath(council) },
-      { name: suburb.name, path: suburbPath(council, suburb.name) },
-    ],
-    data: {
-      council: {
-        id,
-        name,
-        state: council.state,
-        ...(website ? { website } : {}),
-        ...(platform ? { platform } : {}),
-      },
-      suburb,
-      suburbs: nearby,
-    },
-    body: [
-      `<p>${escapeHtml(description)}</p>`,
-      `<p>The dates come from ${escapeHtml(sourceDescription(council))}. Collection days can differ from street to street, so the answer is for your own address.</p>`,
-      ...(nearby.length
-        ? [`<h2>Suburbs near ${escapeHtml(suburb.name)}</h2>`, suburbLinks(council, nearby)]
-        : []),
-      `<p>${link(councilPath(council), `All of ${place}`)}</p>`,
-    ],
-  };
-}
-
-/** The closest other councils to one council, by the middle of each council's area. */
-function nearestCouncils(coverage: Coverage, council: CouncilInfo): CouncilLink[] {
-  const centres = new Map<string, { link: CouncilLink; centre: [number, number] }>();
-  for (const feature of coverage.features) {
-    const { council: id, name, state } = feature.properties;
-    const bounds = boundsOf(feature.geometry.coordinates);
-    if (bounds) centres.set(id, { link: { id, name, state }, centre: centreOf(bounds) });
-  }
-  const here = centres.get(council.id)?.centre;
-  if (!here) return [];
-  return [...centres.values()]
-    .filter((other) => other.link.id !== council.id)
-    .sort((a, b) => distanceKm(here, a.centre) - distanceKm(here, b.centre))
-    .slice(0, NEARBY)
-    .map((other) => other.link);
-}
-
 function sitemap(origin: string, councils: CouncilInfo[]): string {
   const paths = [
     '/',
     ...byState(councils).map(([state]) => statePath(state)),
     ...councils.map(councilPath),
+    ...ARTICLES.keys(),
     ...councils.flatMap((council) =>
       suburbsOf(council.id).map((suburb) => suburbPath(council, suburb.name)),
     ),
@@ -383,6 +82,13 @@ To answer "what bin day is it?" or "which bins go out this week?" for an Austral
 - [OpenAPI specification](${origin}/openapi.json) and [interactive documentation](${origin}/docs).
 
 Errors are JSON, \`{"error": {"code", "message"}}\`. \`ADDRESS_NOT_FOUND\` may include \`suggestions\` to retry with. \`COUNCIL_NOT_SUPPORTED\` means the address is real but its council is not covered yet.
+
+## Guides
+
+${[...ARTICLES.values()]
+  .filter((article) => article.path.startsWith('/guides/'))
+  .map((article) => `- [${article.title}](${origin}${article.path}): ${article.description}`)
+  .join('\n')}
 
 ## Councils
 
@@ -458,6 +164,10 @@ export function addSiteRoutes(
     const suburb = council && findSuburb(council.id, c.req.param('suburb'));
     return council && suburb ? send(c, suburbPage(council, suburb)) : c.notFound();
   });
+
+  for (const article of ARTICLES.values()) {
+    app.get(article.path, (c) => send(c, articlePage(article)));
+  }
 
   app.get('/sitemap.xml', (c) => text(c, sitemap(origin(c), registry.list()), 'application/xml'));
   app.get('/robots.txt', (c) =>
