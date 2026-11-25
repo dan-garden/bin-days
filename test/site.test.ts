@@ -59,16 +59,23 @@ describe('website pages', () => {
 
   it('gives each council its own page, title and data for the UI', async () => {
     const { body } = await get('/bin-days/QLD/brisbane');
-    expect(body).toContain('<title>Brisbane bin day: which bins go out this week?</title>');
+    expect(body).toContain('<title>Brisbane bin days &amp; bin collection calendar | QLD</title>');
     expect(body).toContain(
       '<link rel="canonical" href="https://binday.test/bin-days/qld/brisbane" />',
     );
     expect(body).toContain('<h1 class="hero-title">Brisbane bin day</h1>');
     expect(body).toContain('href="https://example.org/bins?a=1&amp;b=2"'); // escaped
     const data = /<script id="page-data"[^>]*>(.*?)<\/script>/.exec(body)?.[1];
-    const { suburbs, ...rest } = JSON.parse(data ?? '');
+    const { suburbs, bins, faq, ...rest } = JSON.parse(data ?? '');
     expect(suburbs).toContain('Fortitude Valley');
+    // The council's bins, as recorded by `npm run build:bins`, and questions answered from them.
+    expect(bins.map((bin: { type: string }) => bin.type)).toContain('general');
+    expect(faq[0].question).toBe('When is bin day in Brisbane?');
     expect(rest).toEqual({
+      trail: [
+        { name: 'Queensland', path: '/bin-days/qld' },
+        { name: 'Brisbane bin day', path: '/bin-days/qld/brisbane' },
+      ],
       council: {
         id: 'qld/brisbane',
         name: 'Brisbane City Council',
@@ -78,9 +85,15 @@ describe('website pages', () => {
       nearby: [],
       councilCount: 2,
     });
+    const types = [];
     for (const block of body.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)) {
-      expect(JSON.parse(block[1] ?? '')['@context']).toBe('https://schema.org');
+      const item = JSON.parse(block[1] ?? '');
+      expect(item['@context']).toBe('https://schema.org');
+      types.push(item['@type']);
     }
+    expect(types).toEqual(['WebApplication', 'BreadcrumbList', 'GovernmentService', 'FAQPage']);
+    // The questions are on the page too, for readers without JavaScript.
+    expect(body).toContain('<summary>When is bin day in Brisbane?</summary>');
   });
 
   it('gives each state a page listing its councils', async () => {
@@ -143,17 +156,24 @@ describe('website pages', () => {
   it("gives each suburb a page under its council's", async () => {
     const { response, body } = await get('/bin-days/qld/brisbane/fortitude-valley');
     expect(response.status).toBe(200);
-    expect(body).toContain('<title>Fortitude Valley bin day: which bins go out this week?</title>');
+    expect(body).toContain(
+      '<title>Fortitude Valley bin day &amp; bin collection | Brisbane QLD 4006</title>',
+    );
+    expect(body).toMatch(
+      /<meta name="description" content="When is bin day in Fortitude Valley \(4006\)\? Brisbane City Council collects general waste/,
+    );
     expect(body).toContain(
       '<link rel="canonical" href="https://binday.test/bin-days/qld/brisbane/fortitude-valley" />',
     );
     expect(body).toContain('<h1 class="hero-title">Fortitude Valley bin day</h1>');
     expect(body).toContain('Brisbane City Council collects the bins in Fortitude Valley.');
+    expect(body).toContain('Fortitude Valley is in the Brisbane City Council area, postcode 4006.');
+    expect(body).toContain('"postalCode":"4006"');
     // It links to the suburbs around it and back up to its council, and tells the UI where it is.
     expect(body).toContain('<a href="/bin-days/qld/brisbane/new-farm">New Farm bin day</a>');
     expect(body).toContain('<a href="/bin-days/qld/brisbane">Brisbane bin day</a>');
     expect(body).toMatch(
-      /"suburb":\{"name":"Fortitude Valley","latitude":-27\.\d+,"longitude":153\.\d+\}/,
+      /"suburb":\{"name":"Fortitude Valley","latitude":-27\.\d+,"longitude":153\.\d+,"postcode":"4006"\}/,
     );
   });
 
@@ -169,6 +189,35 @@ describe('website pages', () => {
     expect((await get('/bin-days/qld/brisbane/atlantis')).response.status).toBe(404);
     // A suburb only has a page under the council it is in.
     expect((await get('/bin-days/vic/ballarat/paddington')).response.status).toBe(404);
+  });
+
+  it('serves the written pages and guides, with their own titles and breadcrumbs', async () => {
+    const guide = await get('/guides/bin-day-calendar');
+    expect(guide.response.status).toBe(200);
+    expect(guide.body).toContain('<h1 class="hero-title">Put your bin days in your calendar</h1>');
+    expect(guide.body).toContain('<meta property="og:type" content="article" />');
+    expect(guide.body).toContain('"@type":"Article"');
+    expect(guide.body).not.toContain('"@type":"WebApplication"');
+    expect(guide.body).toContain(
+      '<a href="/guides">Guides</a> › Put your bin days in your calendar',
+    );
+    // A guide links on to the others.
+    expect(guide.body).toContain('<a href="/guides/moving-house">');
+
+    const guides = await get('/guides');
+    expect(guides.body).toContain(
+      '<a href="/guides/bin-lid-colours">What each bin lid colour means</a>',
+    );
+    for (const path of ['/about', '/privacy', '/contact']) {
+      expect((await get(path)).response.status).toBe(200);
+    }
+    expect((await get('/guides/nope')).response.status).toBe(404);
+
+    // Every page links to them, and the sitemap lists them.
+    expect((await get('/')).body).toContain('<a href="/privacy">Privacy</a>');
+    expect((await get('/sitemap.xml')).body).toContain(
+      '<loc>https://binday.test/guides/moving-house</loc>',
+    );
   });
 
   it('serves the page from the same build as the scripts in public/', () => {

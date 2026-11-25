@@ -56,7 +56,7 @@ Tracked as [issues on GitHub](https://github.com/dan-garden/bin-days/issues). Th
 - [ ] **Reminders that work in every calendar app** ([#6](https://github.com/dan-garden/bin-days/issues/6)). The calendar feed carries one, but Google ignores it and Apple removes it by default.
 - [ ] **Two South Australian councils** are in the state service but did not pass an end-to-end check: Ceduna and Karoonda East Murray.
 
-Done recently: a calendar feed for any address (`/v1/calendar.ics`), and a page for each of about 7,800 suburbs.
+Done recently: a calendar feed for any address (`/v1/calendar.ics`), a page for each of about 7,800 suburbs, and richer council and suburb pages (postcodes, each council's bins, common questions), guides, and about, privacy and contact pages.
 
 [docs/council-candidates.md](docs/council-candidates.md) has earlier research on about 40 large councils.
 

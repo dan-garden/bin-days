@@ -1,9 +1,10 @@
 import { Anchor, Badge, Group, Paper, Stack, Text, Title, Tooltip } from '@mantine/core';
 import { m } from 'motion/react';
 import type { Bin, BinDaysResult, CollectionDay, ServiceSummary } from '../api.js';
-import { daysUntil, formatDate, relativeDay } from '../lib.js';
+import { daysUntil, formatDate, lidPaint, lidStripe, relativeDay } from '../lib.js';
 import { BinIcon } from './BinIcon.js';
 import { SaveAndShare } from './SaveAndShare.js';
+import { ServiceChip } from './ServiceChip.js';
 
 const PROJECTED = 'Estimated from the regular cycle. Public holidays can shift it.';
 
@@ -41,7 +42,12 @@ export function Result({ result }: { result: BinDaysResult }) {
         </m.div>
 
         <m.div variants={rise}>
-          <Paper className="next-card" radius="xl" p={{ base: 'lg', sm: 'xl' }}>
+          <Paper
+            className="next-card"
+            radius="lg"
+            p={{ base: 'lg', sm: 'xl' }}
+            style={{ '--lids': lidStripe(next?.bins ?? []) }}
+          >
             {next ? (
               <NextCollection day={next} today={today} />
             ) : (
@@ -74,7 +80,7 @@ export function Result({ result }: { result: BinDaysResult }) {
             </Title>
             <Group gap="sm">
               {result.services.map((service) => (
-                <ServiceChip key={service.name} service={service} />
+                <NotedServiceChip key={service.name} service={service} />
               ))}
             </Group>
             {estimated && (
@@ -110,7 +116,13 @@ function NextCollection({ day, today }: { day: CollectionDay; today: string }) {
       </div>
       <Group gap="lg" align="flex-start" wrap="wrap">
         {day.bins.map((bin, index) => (
-          <Stack key={bin.name} gap={4} align="center" className="next-bin">
+          <Stack
+            key={bin.name}
+            gap={4}
+            align="center"
+            className="next-bin"
+            style={{ '--lid': lidPaint(bin) }}
+          >
             <BinIcon type={bin.type} colour={bin.colour} size={96} greet={0.5 + index * 0.18} />
             <Text size="sm" fw={600} ta="center">
               {bin.name}
@@ -125,7 +137,10 @@ function NextCollection({ day, today }: { day: CollectionDay; today: string }) {
 
 function DayRow({ day, today }: { day: CollectionDay; today: string }) {
   return (
-    <div className="day-row">
+    <div
+      className="day-row"
+      style={{ '--lids': lidStripe(day.bins, '180deg') } as React.CSSProperties}
+    >
       <div className="day-date">
         <Text size="xs" tt="uppercase" fw={700} c="dimmed">
           {formatDate(day.date, { weekday: 'short' })}
@@ -177,24 +192,12 @@ function Estimated() {
   );
 }
 
-function ServiceChip({ service }: { service: ServiceSummary }) {
-  const chip = (
-    <Group gap={8} wrap="nowrap" className="service-chip">
-      <BinIcon type={service.type} colour={service.colour} size={30} />
-      <div>
-        <Text size="sm" fw={600} lh={1.2}>
-          {service.name}
-        </Text>
-        <Text size="xs" c="dimmed" lh={1.2}>
-          {service.frequency}
-          {service.optional && ' · opt-in'}
-        </Text>
-      </div>
-    </Group>
-  );
+/** A bin and how often it goes, with the council's note about it if there is one. */
+function NotedServiceChip({ service }: { service: ServiceSummary }) {
+  const chip = <ServiceChip service={service} />;
   return service.notes ? (
     <Tooltip label={service.notes} multiline w={220} withArrow>
-      {chip}
+      <div>{chip}</div>
     </Tooltip>
   ) : (
     chip

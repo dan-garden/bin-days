@@ -9,6 +9,7 @@ import {
 } from '../../../src/councils/names.js';
 import { MapPanel } from './MapPanel.js';
 import { Outbound } from './Outbound.js';
+import { ServiceChip } from './ServiceChip.js';
 import { SuburbLinks } from './SuburbLinks.js';
 
 interface CouncilAboutProps {
@@ -20,10 +21,19 @@ interface CouncilAboutProps {
   suburb?: PageData['suburb'];
   /** Suburbs to link to: all of the council's on its own page, the nearest on a suburb's. */
   suburbs?: string[];
+  /** The bins the council collects. */
+  bins?: NonNullable<PageData['bins']>;
 }
 
 /** About one council: the area it covers, where its dates come from, and the councils around it. */
-export function CouncilAbout({ council, nearby, pin, suburb, suburbs = [] }: CouncilAboutProps) {
+export function CouncilAbout({
+  council,
+  nearby,
+  pin,
+  suburb,
+  suburbs = [],
+  bins = [],
+}: CouncilAboutProps) {
   const place = shortCouncilName(council.name);
   const state = STATE_NAMES[council.state];
   return (
@@ -44,6 +54,12 @@ export function CouncilAbout({ council, nearby, pin, suburb, suburbs = [] }: Cou
           <dl className="facts">
             <dt>Council</dt>
             <dd>{council.name}</dd>
+            {suburb?.postcode && (
+              <>
+                <dt>Postcode</dt>
+                <dd>{suburb.postcode}</dd>
+              </>
+            )}
             <dt>State</dt>
             <dd>
               <Anchor href={statePath(council.state)} inherit>
@@ -61,6 +77,18 @@ export function CouncilAbout({ council, nearby, pin, suburb, suburbs = [] }: Cou
               </>
             )}
           </dl>
+          {bins.length > 0 && (
+            <div>
+              <Text fw={700} mb={8}>
+                Bins collected
+              </Text>
+              <div className="chip-row">
+                {bins.map((bin) => (
+                  <ServiceChip key={bin.name} service={bin} />
+                ))}
+              </div>
+            </div>
+          )}
           {nearby.length > 0 && (
             <div>
               <Text fw={700} mb={8}>

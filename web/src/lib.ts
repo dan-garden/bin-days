@@ -47,6 +47,22 @@ export function lidPaint(bin: { type: BinType; colour?: string | undefined }): s
   return LID_PAINT[bin.colour ?? ''] ?? LID_PAINT[USUAL_LID[bin.type] ?? ''] ?? '#868e96';
 }
 
+/**
+ * The site's signature: a bar split into the lid colours of some bins, as a CSS
+ * background. With no bins, the four usual lids.
+ */
+export function lidStripe(
+  bins: ReadonlyArray<{ type: BinType; colour?: string | undefined }>,
+  direction = '90deg',
+): string {
+  const paints = bins.length
+    ? bins.map(lidPaint)
+    : (['general', 'recycling', 'organics', 'glass'] as const).map((type) => lidPaint({ type }));
+  const step = 100 / paints.length;
+  const stops = paints.map((paint, i) => `${paint} ${i * step}% ${(i + 1) * step}%`);
+  return `linear-gradient(${direction}, ${stops.join(', ')})`;
+}
+
 /** Group councils by state, biggest group first. */
 export function groupByState<T extends { state: AustralianState; name: string }>(
   councils: readonly T[],

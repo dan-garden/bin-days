@@ -7,14 +7,17 @@ export interface Suburb {
   name: string;
   latitude: number;
   longitude: number;
+  /** The postcode its middle is in. */
+  postcode?: string;
 }
 
 /** The suburbs in a council's area, in alphabetical order. None for a council not in the list. */
 export function suburbsOf(councilId: string): Suburb[] {
-  return (SUBURBS[councilId] ?? []).map(([name, latitude, longitude]) => ({
+  return (SUBURBS[councilId] ?? []).map(([name, latitude, longitude, postcode]) => ({
     name,
     latitude,
     longitude,
+    ...(postcode ? { postcode } : {}),
   }));
 }
 
