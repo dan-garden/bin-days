@@ -46,6 +46,44 @@ describe('ArcGIS dated-zone adapter', () => {
     ]);
   });
 
+  it('looks around the address on a layer of roads, and keeps a bin to the zones it is for', async () => {
+    // Field shapes as Byron publishes them: road centrelines, rural roads with no area.
+    const roads = createArcGisZonesCouncil({
+      id: 'nsw/test',
+      name: 'Test Shire Council',
+      state: 'NSW',
+      lgaCodes: ['19999'],
+      timezone: 'Australia/Sydney',
+      layerUrl: 'https://maps.test/arcgis/rest/services/Roads/FeatureServer/0',
+      searchRadius: 40,
+      weekField: 'Nth_Sth',
+      bins: [
+        {
+          type: 'general',
+          name: 'Landfill',
+          dayField: 'BINDAY',
+          weekOf: { null: '2026-11-09' },
+          everyDays: 14,
+        },
+        {
+          type: 'organics',
+          name: 'Organics',
+          dayField: 'BINDAY',
+          everyDays: 7,
+          onlyWhere: { CLASS: 'Urban' },
+        },
+      ],
+    });
+    const http = fakeHttp(() =>
+      json({ features: [{ attributes: { BINDAY: 'Thursday', CLASS: 'Rural', Nth_Sth: null } }] }),
+    );
+    const schedule = await roads.getSchedule(address, ctx(http));
+    expect(http.calls[0]?.searchParams.get('distance')).toBe('40');
+    expect(schedule.services.map((s) => [s.type, s.recurrence])).toEqual([
+      ['general', { kind: 'interval', everyDays: 14, anchor: '2026-11-12' }],
+    ]);
+  });
+
   it('works a fortnightly bin out from its weekday and the week its area is in', async () => {
     // Field shapes as Newcastle publishes them.
     const weeks = createArcGisZonesCouncil({

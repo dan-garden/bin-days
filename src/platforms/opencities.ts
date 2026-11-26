@@ -163,7 +163,9 @@ export function parseOpenCitiesWasteServices(
 
   $('.waste-services-result').each((_, el) => {
     const $el = $(el);
-    const name = $el.find('h3').first().text().trim();
+    const heading = $el.find('h3').first().text().trim();
+    // A cycle tacked onto the name ("General Waste - Weekly") is read below, then shown separately.
+    const name = heading.replace(/\s*[-–]\s*(weekly|fortnightly|monthly)$/i, '');
     const dateText = $el.find('.next-service').first().text().trim();
     const frequencyText = $el.find('.subheading').first().text() || $el.find('.note').text();
     const type = classifyBin(name, options.binTypes);
@@ -174,7 +176,7 @@ export function parseOpenCitiesWasteServices(
     const everyDays =
       type === 'bulky'
         ? undefined
-        : (parseFrequency(frequencyText) ?? parseFrequency(name) ?? parseFrequency(dateText));
+        : (parseFrequency(frequencyText) ?? parseFrequency(heading) ?? parseFrequency(dateText));
     const next = parseAustralianDate(dateText) ?? weekdayOnly(dateText, everyDays, options.today);
     if (!name || !next) return;
 

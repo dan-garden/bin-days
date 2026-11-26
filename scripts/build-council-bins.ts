@@ -3,7 +3,8 @@
  * how often, for the council and suburb pages. It looks up each council's
  * sample address (from the live tests) through the real pipeline, one council
  * at a time. Run it with `npm run build:bins` after adding a council; it takes
- * several minutes.
+ * several minutes. Name councils to look up only those (`npm run build:bins -- nsw/ wa/albany`);
+ * the rest keep what the file already says.
  *
  * A council whose lookup fails keeps what the file already said about it.
  */
@@ -17,7 +18,13 @@ const service = createServiceFromEnv();
 const bins: Record<string, CouncilBin[]> = {};
 const failed: string[] = [];
 
+const only = process.argv.slice(2);
 for (const council of ALL_COUNCILS) {
+  if (only.length && !only.some((prefix) => council.id.startsWith(prefix))) {
+    const kept = COUNCIL_BINS[council.id];
+    if (kept) bins[council.id] = kept;
+    continue;
+  }
   let found: CouncilBin[] | undefined;
   for (const address of ADDRESSES[council.id] ?? []) {
     try {

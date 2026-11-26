@@ -38,8 +38,11 @@ export async function queryArcGisPoint(
   layerUrl: string,
   point: { latitude: number; longitude: number },
   outFields = '*',
+  /** Also match features this far away, for layers of lines (roads) rather than areas. */
+  radiusMetres?: number,
 ): Promise<{ attributes: Array<Record<string, unknown>>; url: string }> {
   const { features, url } = await query(http, layerUrl, {
+    ...(radiusMetres ? { distance: String(radiusMetres), units: 'esriSRUnit_Meter' } : {}),
     geometry: JSON.stringify({
       x: point.longitude,
       y: point.latitude,

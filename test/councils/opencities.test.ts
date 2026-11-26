@@ -46,6 +46,8 @@ describe('OpenCities waste-services parser', () => {
       entry('Garbage', 'Thursday', 'Collected weekly.'),
       entry('Recycling', 'Thursday', 'Collected fortnightly.'),
       entry('Landfill', 'Every Tuesday'),
+      // As Broken Hill words it: the cycle is read from the name, then left off it.
+      entry('General Waste - Weekly', 'Wed 02/12/2026'),
     ].join('');
     const services = parseOpenCitiesWasteServices(html, { today: d('2026-11-10') });
     expect(services.map((s) => [s.type, s.recurrence])).toEqual([
@@ -55,7 +57,9 @@ describe('OpenCities waste-services parser', () => {
       // A weekday alone pins down a weekly bin; a fortnightly one is left out.
       ['general', { kind: 'interval', everyDays: 7, anchor: '2026-11-12' }],
       ['general', { kind: 'interval', everyDays: 7, anchor: '2026-11-10' }],
+      ['general', { kind: 'interval', everyDays: 7, anchor: '2026-12-02' }],
     ]);
+    expect(services.at(-1)?.name).toBe('General Waste');
   });
 
   it('falls back to a single date when no frequency is given', () => {

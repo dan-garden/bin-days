@@ -108,7 +108,12 @@ export function createWasteInfoCouncil(config: WasteInfoConfig): CouncilAdapter 
       ).flatMap((r) => r.properties);
       const matches = properties.filter((p) => matchesHouseNumber(p.name, parts));
       // "5 Smith St" should be the house, not unit 1/5, unless a unit was asked for.
-      const property = matches.find((p) => !!parts.unit === p.name.includes('/')) ?? matches[0];
+      // Some councils (Narrabri) list one entry for a whole street, not one per house.
+      const wholeStreet = properties.length === 1 && !/^\s*\d/.test(properties[0]!.name);
+      const property =
+        matches.find((p) => !!parts.unit === p.name.includes('/')) ??
+        matches[0] ??
+        (wholeStreet ? properties[0] : undefined);
       if (!property) throw notFound(properties.map((p) => p.name));
 
       const path = `properties/${property.id}.json?start=${today}&end=${addDays(today, HORIZON_DAYS)}`;

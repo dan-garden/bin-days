@@ -18,11 +18,13 @@ export interface ArcGisZonesConfig extends Omit<CouncilInfo, 'platform'> {
   addressField?: string;
   /** The field saying which of the council's alternating areas a zone or property is in. */
   weekField?: string;
+  /** For a layer of roads rather than areas: how far from the address to look, in metres. */
+  searchRadius?: number;
   bins: ZoneBin[];
 }
 
 export function createArcGisZonesCouncil(config: ArcGisZonesConfig): CouncilAdapter {
-  const { layerUrl, addressField, weekField, bins, ...info } = config;
+  const { layerUrl, addressField, weekField, searchRadius, bins, ...info } = config;
 
   return {
     ...info,
@@ -42,7 +44,15 @@ export function createArcGisZonesCouncil(config: ArcGisZonesConfig): CouncilAdap
         if (latitude == null || longitude == null) {
           throw invalidInput(`${info.name} lookups need an address that can be located on a map`);
         }
-        const found = await queryArcGisPoint(http, layerUrl, { latitude, longitude });
+        // shortcut: with a radius, a corner property can be near two roads and gets the first;
+        // ask for the closest road if that turns out to matter.
+        const found = await queryArcGisPoint(
+          http,
+          layerUrl,
+          { latitude, longitude },
+          '*',
+          searchRadius,
+        );
         [zone] = found.attributes;
         url = found.url;
       }
