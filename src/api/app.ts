@@ -4,8 +4,10 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { normaliseState } from '../core/address.js';
 import { secondsUntilMidnight } from '../core/date.js';
 import { BinDaysError, type BinDaysErrorCode } from '../core/errors.js';
+import { binStats } from '../councils/stats.js';
 import type { BinDaysService } from '../service.js';
 import { toCalendar } from './calendar.js';
+import { addMcpRoutes } from './mcp.js';
 import { CalendarQuery, CollectionsQuery, DOCS_HTML, openApiDocument } from './openapi.js';
 
 const STATUS: Record<BinDaysErrorCode, ContentfulStatusCode> = {
@@ -98,6 +100,14 @@ export function createApp(service: BinDaysService, options: AppOptions = {}): Ho
     const state = normaliseState(c.req.query('state'));
     return c.json({ councils: service.registry.list(state ? { state } : {}) });
   });
+
+  /** GET /v1/stats: how often the supported councils collect each bin, by bin and by state. */
+  app.get('/v1/stats', (c) => {
+    c.header('cache-control', 'public, max-age=3600, s-maxage=86400');
+    return c.json(binStats(service.registry.list()));
+  });
+
+  addMcpRoutes(app, service);
 
   /** GET /v1/coverage is a GeoJSON map of the areas the supported councils cover. */
   app.get('/v1/coverage', async (c) => {

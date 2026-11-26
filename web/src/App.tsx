@@ -37,6 +37,8 @@ const REPO = 'https://github.com/dan-garden/bin-days';
 /** The site's own pages, linked from every page's footer. */
 const SITE_LINKS = [
   ['/guides', 'Guides'],
+  ['/which-bin', 'Which bin?'],
+  ['/data/bin-collections', 'Data'],
   ['/about', 'About'],
   ['/privacy', 'Privacy'],
   ['/contact', 'Contact'],

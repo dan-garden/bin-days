@@ -242,6 +242,51 @@ describe('HTTP API', () => {
     );
   });
 
+  it('answers AI assistants over MCP with the same lookups', async () => {
+    const rpc = async (method: string, params?: object, notify = false) => {
+      const res = await app.request('/mcp', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method,
+          ...(notify ? {} : { id: 1 }),
+          params,
+        }),
+      });
+      return {
+        status: res.status,
+        // biome-ignore lint/suspicious/noExplicitAny: JSON-RPC replies, picked apart below.
+        body: res.status === 202 ? undefined : ((await res.json()) as any),
+      };
+    };
+    const hello = await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {} });
+    expect(hello.body.result.protocolVersion).toBe('2025-06-18');
+    expect((await rpc('notifications/initialized', {}, true)).status).toBe(202);
+    const { tools } = (await rpc('tools/list')).body.result;
+    expect(tools.map((tool: { name: string }) => tool.name)).toEqual([
+      'get_bin_days',
+      'list_councils',
+      'get_bin_statistics',
+    ]);
+    expect(tools[0].inputSchema.required).toEqual(['address']);
+    const days = await rpc('tools/call', {
+      name: 'get_bin_days',
+      arguments: { address: '1 Test St', from: '2026-11-10', to: '2026-11-16' },
+    });
+    expect(
+      days.body.result.structuredContent.days.map((day: { date: string }) => day.date),
+    ).toEqual(['2026-11-13']);
+    // Bad input comes back as a tool error the model can read, not a protocol failure.
+    const bad = await rpc('tools/call', { name: 'get_bin_days', arguments: { address: '' } });
+    expect(bad.body.result.isError).toBe(true);
+    expect((await rpc('nope')).body.error.code).toBe(-32601);
+    expect((await app.request('/mcp')).status).toBe(405);
+  });
+
   it('GET /health reports the cache in use and that it works', async () => {
     const res = await app.request('/health');
     expect(await res.json()).toEqual({ ok: true, cache: { backend: 'memory', working: true } });

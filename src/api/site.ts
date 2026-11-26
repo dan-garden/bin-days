@@ -1,5 +1,6 @@
 import type { Context, Hono } from 'hono';
 import { ARTICLES } from '../content/articles.js';
+import { DATA_CSV, DATA_PATH } from '../content/pages/bin-data.js';
 import { AUSTRALIAN_STATES } from '../core/types.js';
 import {
   addressFromPath,
@@ -10,6 +11,7 @@ import {
   suburbPath,
 } from '../councils/names.js';
 import type { CouncilRegistry } from '../councils/registry.js';
+import { binsCsv } from '../councils/stats.js';
 import { findSuburb, suburbsOf } from '../councils/suburbs.js';
 import type { CouncilInfo } from '../councils/types.js';
 import type { Coverage } from '../service.js';
@@ -61,7 +63,11 @@ function sitemap(origin: string, councils: CouncilInfo[]): string {
       suburbsOf(council.id).map((suburb) => suburbPath(council, suburb.name)),
     ),
   ];
-  const urls = paths.map((path) => `  <url><loc>${escapeHtml(origin + path)}</loc></url>`);
+  // Only the written pages say when they last changed: they're the ones with a real date.
+  const urls = paths.map((path) => {
+    const updated = ARTICLES.get(path)?.updated;
+    return `  <url><loc>${escapeHtml(origin + path)}</loc>${updated ? `<lastmod>${updated}</lastmod>` : ''}</url>`;
+  });
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
 }
 
@@ -79,9 +85,18 @@ To answer "what bin day is it?" or "which bins go out this week?" for an Austral
 - [Calendar feed for an address](${origin}/v1/calendar.ics?address=833%20Southport%20Nerang%20Road%2C%20Nerang%20QLD): \`GET /v1/calendar.ics?address=<street address>\`. The next year of collection days as an iCalendar feed that calendar apps can subscribe to. Optional \`reminder=18\` adds a reminder at that hour the evening before.
 - [Supported councils](${origin}/v1/councils): \`GET /v1/councils\`, optionally \`?state=QLD\`.
 - [Map of supported areas](${origin}/v1/coverage): GeoJSON, one feature per council.
+- [Bin collection statistics](${origin}/v1/stats): how often the councils collect each bin, their lid colours and which take food scraps, overall and by state.
 - [OpenAPI specification](${origin}/openapi.json) and [interactive documentation](${origin}/docs).
 
 Errors are JSON, \`{"error": {"code", "message"}}\`. \`ADDRESS_NOT_FOUND\` may include \`suggestions\` to retry with. \`COUNCIL_NOT_SUPPORTED\` means the address is real but its council is not covered yet.
+
+## MCP server
+
+AI assistants that support the Model Context Protocol can connect to \`${origin}/mcp\` (Streamable HTTP, no sign-in) for three read-only tools: \`get_bin_days\` (bin days for an address), \`list_councils\` and \`get_bin_statistics\`.
+
+## Data
+
+- [Australian bin collection data](${origin}${DATA_PATH}): charts and tables of how often councils collect each bin, by state. [Download as CSV](${origin}${DATA_CSV}), free to use under CC BY 4.0.
 
 ## Guides
 
@@ -100,6 +115,12 @@ ${byState(councils)
   .join('\n\n')}
 `;
 }
+
+/**
+ * IndexNow's key: Bing and others fetch it at `/<key>.txt` to check that pings for this site come
+ * from its owner (`npm run indexnow`). Public by design; it only proves the site chose it.
+ */
+export const INDEXNOW_KEY = '8658f281b926b7b6997036c529ffdba4';
 
 export function addSiteRoutes(
   app: Hono,
@@ -173,5 +194,10 @@ export function addSiteRoutes(
   app.get('/robots.txt', (c) =>
     text(c, `User-agent: *\nAllow: /\n\nSitemap: ${origin(c)}/sitemap.xml\n`, 'text/plain'),
   );
+  app.get(DATA_CSV, (c) => {
+    c.header('content-disposition', 'inline; filename="bin-collections.csv"');
+    return text(c, binsCsv(registry.list()), 'text/csv');
+  });
+  app.get(`/${INDEXNOW_KEY}.txt`, (c) => text(c, INDEXNOW_KEY, 'text/plain'));
   app.get('/llms.txt', (c) => text(c, llmsTxt(origin(c), registry.list()), 'text/markdown'));
 }
