@@ -40,6 +40,8 @@ export const faqHtml = (faq: NonNullable<PageData['faq']>) =>
 /** The site's own pages, linked from every page. */
 const SITE_LINKS = [
   ['/guides', 'Guides'],
+  ['/which-bin', 'Which bin?'],
+  ['/data/bin-collections', 'Data'],
   ['/about', 'About'],
   ['/privacy', 'Privacy'],
   ['/contact', 'Contact'],
@@ -76,8 +78,32 @@ function structuredData(origin: string, page: Page): object[] {
       operatingSystem: 'Any',
       description: page.description,
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'AUD' },
+      publisher: { '@id': `${origin}/#organization` },
     });
   }
+  // Every page names the site and who runs it, once, so the rest can point at them by `@id`.
+  items.push(
+    {
+      '@context': context,
+      '@type': 'WebSite',
+      '@id': `${origin}/#website`,
+      name: SITE_NAME,
+      url: `${origin}/`,
+      inLanguage: 'en-AU',
+      publisher: { '@id': `${origin}/#organization` },
+    },
+    {
+      '@context': context,
+      '@type': 'Organization',
+      '@id': `${origin}/#organization`,
+      name: SITE_NAME,
+      url: `${origin}/`,
+      logo: `${origin}/apple-touch-icon.png`,
+      description: 'A free, independent site and API for Australian bin collection days.',
+      areaServed: 'AU',
+      sameAs: ['https://github.com/dan-garden/bin-days'],
+    },
+  );
   if (page.trail.length > 1) {
     items.push({
       '@context': context,
@@ -89,18 +115,6 @@ function structuredData(origin: string, page: Page): object[] {
         item: origin + step.path,
       })),
     });
-  } else {
-    items.push(
-      { '@context': context, '@type': 'WebSite', name: SITE_NAME, url: `${origin}/` },
-      {
-        '@context': context,
-        '@type': 'Organization',
-        name: SITE_NAME,
-        url: `${origin}/`,
-        logo: `${origin}/apple-touch-icon.png`,
-        sameAs: ['https://github.com/dan-garden/bin-days'],
-      },
-    );
   }
   return [...items, ...(page.schema?.(origin) ?? [])];
 }

@@ -132,6 +132,38 @@ export const CollectionsResponse = z.strictObject({
 
 export const CouncilsResponse = z.strictObject({ councils: z.array(Council) });
 
+const counts = z.record(z.string(), z.number().int());
+const binCount = z.strictObject({
+  councils: z.number().int().meta({ description: 'Councils that collect this bin.' }),
+  frequency: counts.meta({
+    description: 'Of those, how many collect it weekly, fortnightly, every 4 weeks or other.',
+  }),
+  colours: counts.meta({ description: 'Of those, how many use each lid colour.' }),
+});
+
+export const StatsResponse = z.strictObject({
+  councils: z.number().int(),
+  bins: z.strictObject({
+    general: binCount,
+    recycling: binCount,
+    organics: binCount,
+    glass: binCount,
+  }),
+  fogo: z.number().int().meta({ description: 'Councils that take food scraps.' }),
+  binsPerCouncil: counts.meta({ description: 'How many councils collect 1, 2, 3... bins.' }),
+  states: z.array(
+    z.strictObject({
+      state,
+      name: z.string(),
+      councils: z.number().int(),
+      weeklyGeneral: z.number().int(),
+      organics: z.number().int(),
+      fogo: z.number().int(),
+      glass: z.number().int(),
+    }),
+  ),
+});
+
 export const CoverageResponse = z.strictObject({
   type: z.literal('FeatureCollection'),
   features: z.array(
@@ -168,7 +200,7 @@ export const ErrorResponse = z.strictObject({
 
 type JsonSchema = Record<string, unknown>;
 
-function schema(type: z.ZodType): JsonSchema {
+export function schema(type: z.ZodType): JsonSchema {
   const { $schema: _, ...rest } = z.toJSONSchema(type, { io: 'input' });
   return rest;
 }
@@ -238,6 +270,14 @@ export function openApiDocument() {
           summary: 'Supported councils',
           parameters: parameters(CouncilsQuery),
           responses: { 200: json('The supported councils.', CouncilsResponse) },
+        },
+      },
+      '/v1/stats': {
+        get: {
+          summary: 'Bin collection statistics',
+          description:
+            'How often the supported councils collect each bin, their lid colours, and figures by state. The same data as https://bindays.au/data/bin-collections, free to use under CC BY 4.0.',
+          responses: { 200: json('Counts of councils.', StatsResponse) },
         },
       },
       '/v1/coverage': {

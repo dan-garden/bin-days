@@ -39,6 +39,10 @@ npm run cli -- "833 Southport Nerang Road, Nerang QLD"
 | `GET /v1/calendar.ics?address=<text>` | The next year of collection days as a calendar feed |
 | `GET /v1/councils`                   | The councils supported so far                   |
 | `GET /v1/coverage`                   | A map (GeoJSON) of the areas those councils cover |
+| `GET /v1/stats`                      | How often those councils collect each bin, by state |
+| `POST /mcp`                          | The same lookups as an MCP server, for AI assistants |
+
+The figures behind `/v1/stats` are also a page, [/data/bin-collections](https://bindays.au/data/bin-collections), with a CSV download under CC BY 4.0.
 
 On the website, `/address/<address>` opens straight on that address's bins, so a result can be shared as a link.
 

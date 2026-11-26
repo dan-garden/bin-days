@@ -24,6 +24,16 @@
   /* The street's fog (StreetScene.tsx): far off, the ground fades into it, so the sky meets it there. */
   --street-fog: #f6cdc6;
   --street-low: #ffe1bf;
+  /* Charts (src/content/charts.ts): one green, darkest for the most often; checked for contrast. */
+  --chart-0: #1b5e30;
+  --chart-1: #3f9a55;
+  --chart-2: #7dbf8b;
+  --chart-3: #c9cdca;
+  --chart-on-0: #fff;
+  --chart-on-1: #fff;
+  --chart-on-2: #14301c;
+  --chart-on-3: #2b2f2c;
+  --chart-track: #ecebe5;
 }
 
 [data-mantine-color-scheme="dark"] {
@@ -37,6 +47,15 @@
   --sky-2: #1a1830;
   --street-fog: #1a2142;
   --street-low: #262a4a;
+  --chart-0: #d3f4da;
+  --chart-1: #7fcb90;
+  --chart-2: #3a8a4d;
+  --chart-3: #4a4e4c;
+  --chart-on-0: #14301c;
+  --chart-on-1: #14301c;
+  --chart-on-2: #fff;
+  --chart-on-3: #e6e9e7;
+  --chart-track: #2a2d2c;
 }
 
 /* Mantine's "dimmed" grey is too faint on these backgrounds to read comfortably. */
@@ -793,6 +812,220 @@ body::before {
   html {
     scroll-behavior: auto;
   }
+}
+
+/* The answer on a "which bin?" page (src/content/items.ts): a bin's lid colour, then where it goes. */
+.prose .bin-answer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--card-border);
+  border-top: 8px solid var(--lid);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--lid) 10%, var(--card));
+  box-shadow: var(--card-shadow);
+}
+
+.bin-answer strong {
+  font-size: 1.4rem;
+}
+
+.bin-answer span {
+  color: var(--mantine-color-dimmed);
+}
+
+/* Charts, tables and headline numbers on the written pages (src/content/charts.ts). */
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.6rem;
+  margin: 1.5rem 0;
+}
+
+.stat-tiles > div {
+  display: flex;
+  flex-direction: column-reverse;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.9rem;
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+}
+
+.stat-tiles dd {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.stat-tiles dt {
+  font-size: 0.85rem;
+  color: var(--mantine-color-dimmed);
+}
+
+.chart {
+  margin: 1.25rem 0 1.75rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.9rem;
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+}
+
+.chart figcaption {
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 10rem) 1fr 6.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.chart-label {
+  line-height: 1.25;
+}
+
+.chart-track,
+.chart-stack {
+  display: flex;
+  gap: 2px;
+  height: 1.5rem;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.chart-track {
+  background: var(--chart-track);
+}
+
+.chart-bar {
+  border-radius: 0 4px 4px 0;
+  background: var(--chart-1);
+}
+
+.chart-stack > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.chart-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-value small {
+  font-weight: 400;
+  color: var(--mantine-color-dimmed);
+}
+
+.prose .chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.prose .chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.chart-legend span {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 3px;
+}
+
+.chart-part-0 {
+  color: var(--chart-on-0);
+  background: var(--chart-0);
+}
+
+.chart-part-1 {
+  color: var(--chart-on-1);
+  background: var(--chart-1);
+}
+
+.chart-part-2 {
+  color: var(--chart-on-2);
+  background: var(--chart-2);
+}
+
+.chart-part-3 {
+  color: var(--chart-on-3);
+  background: var(--chart-3);
+}
+
+.prose .chart-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--mantine-color-dimmed);
+}
+
+@media (max-width: 30em) {
+  /* The label goes above its bar, so the bar gets the width. */
+  .chart-row {
+    grid-template-columns: 1fr auto;
+    gap: 0.2rem 0.75rem;
+  }
+
+  .chart-label {
+    grid-column: 1 / -1;
+  }
+}
+
+.table-scroll {
+  margin: 1rem 0 1.5rem;
+  overflow-x: auto;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.prose caption {
+  margin-bottom: 0.5rem;
+  text-align: left;
+  font-weight: 700;
+}
+
+.prose th,
+.prose td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--card-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.prose td:first-child {
+  white-space: normal;
+}
+
+.prose th {
+  font-size: 0.8rem;
+  color: var(--mantine-color-dimmed);
 }
 
 .faq-item .prose {

@@ -91,7 +91,14 @@ describe('website pages', () => {
       expect(item['@context']).toBe('https://schema.org');
       types.push(item['@type']);
     }
-    expect(types).toEqual(['WebApplication', 'BreadcrumbList', 'GovernmentService', 'FAQPage']);
+    expect(types).toEqual([
+      'WebApplication',
+      'WebSite',
+      'Organization',
+      'BreadcrumbList',
+      'GovernmentService',
+      'FAQPage',
+    ]);
     // The questions are on the page too, for readers without JavaScript.
     expect(body).toContain('<summary>When is bin day in Brisbane?</summary>');
   });
@@ -265,6 +272,26 @@ describe('files for crawlers and language models', () => {
       'https://binday.test/bin-days/vic/ballarat',
     ]);
     expect((await get('/robots.txt')).body).toContain('Sitemap: https://binday.test/sitemap.xml');
+  });
+
+  it('publishes the bin data as a page with charts, a dataset and a CSV', async () => {
+    const page = await get('/data/bin-collections');
+    expect(page.response.status).toBe(200);
+    expect(page.body).toContain('class="chart"');
+    expect(page.body).toContain('"@type":"Dataset"');
+    expect(page.body).toContain('"@id":"https://binday.test/#organization"');
+    const csv = await get('/data/bin-collections.csv');
+    expect(csv.response.headers.get('content-type')).toContain('text/csv');
+    const [header, ...rows] = csv.body.trim().split('\n');
+    expect(header).toBe(
+      'council_id,council,state,bin_type,bin_name,lid_colour,frequency,food_scraps',
+    );
+    // Only the councils this site has.
+    expect(new Set(rows.map((row) => row.split(',')[0]))).toEqual(
+      new Set(['qld/brisbane', 'vic/ballarat']),
+    );
+    const sitemap = await get('/sitemap.xml');
+    expect(sitemap.body).toMatch(/bin-collections<\/loc><lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
   });
 
   it('explains the API to language models in llms.txt', async () => {

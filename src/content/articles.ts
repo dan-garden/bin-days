@@ -5,7 +5,9 @@ import { missedCollection } from './guides/missed-bin-collection.js';
 import { movingHouse } from './guides/moving-house.js';
 import { publicHolidays } from './guides/public-holidays.js';
 import { thisWeek } from './guides/what-bins-go-out-this-week.js';
+import { ITEM_ARTICLES, itemsIndex } from './items.js';
 import { about } from './pages/about.js';
+import { binData } from './pages/bin-data.js';
 import { contact } from './pages/contact.js';
 import { privacy } from './pages/privacy.js';
 
@@ -27,7 +29,13 @@ export interface Article {
   /** When its facts were last checked, `YYYY-MM-DD`. */
   updated: string;
   /** The text, in the site's Markdown (see `markdown.ts`). */
-  body: string;
+  body?: string;
+  /** Or HTML already built from it, for a page with charts (see `charts.ts`). */
+  html?: string;
+  /** The page it sits under in the breadcrumb, if not the home page or the guides. */
+  parent?: { name: string; path: string };
+  /** Structured data the page adds, given the site's origin. */
+  schema?: (origin: string) => object[];
 }
 
 export const GUIDES_PATH = '/guides';
@@ -62,5 +70,8 @@ export const guidesIndex: Article = {
 
 /** Every written page, by its path. */
 export const ARTICLES = new Map(
-  [...PAGES, guidesIndex, ...GUIDES].map((article) => [article.path, article]),
+  [...PAGES, guidesIndex, ...GUIDES, binData, itemsIndex, ...ITEM_ARTICLES].map((article) => [
+    article.path,
+    article,
+  ]),
 );

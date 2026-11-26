@@ -27,6 +27,7 @@
     "test:watch": "vitest",
     "test:live": "LIVE=1 vitest run test/live",
     "check:sources": "tsx scripts/check-sources.ts",
+    "indexnow": "tsx scripts/indexnow.ts",
     "cli": "tsx src/cli.ts"
   },
   "author": "Daniel Garden",

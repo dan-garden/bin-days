@@ -303,7 +303,7 @@ export function suburbPage(council: CouncilInfo, suburb: Suburb): Page {
 /** A written page: a guide, the guides list, or one of the site's own pages. */
 export function articlePage(article: Article): Page {
   const isGuide = article.path.startsWith(`${GUIDES_PATH}/`);
-  const html = markdownToHtml(article.body);
+  const html = article.html ?? markdownToHtml(article.body ?? '');
   // A guide ends with the other guides, so a reader (and a crawler) can carry on.
   const others = isGuide ? GUIDES.filter((guide) => guide.path !== article.path) : [];
   const more = others.length
@@ -316,6 +316,7 @@ export function articlePage(article: Article): Page {
     trail: [
       HOME,
       ...(isGuide ? [{ name: 'Guides', path: GUIDES_PATH }] : []),
+      ...(article.parent ? [article.parent] : []),
       { name: article.title, path: article.path },
     ],
     data: {
@@ -331,9 +332,11 @@ export function articlePage(article: Article): Page {
         description: article.description,
         dateModified: article.updated,
         url: origin + article.path,
-        author: { '@type': 'Organization', name: SITE_NAME, url: `${origin}/` },
-        publisher: { '@type': 'Organization', name: SITE_NAME, url: `${origin}/` },
+        author: { '@id': `${origin}/#organization` },
+        publisher: { '@id': `${origin}/#organization` },
+        isPartOf: { '@id': `${origin}/#website` },
       },
+      ...(article.schema?.(origin) ?? []),
     ],
   };
 }
