@@ -1038,21 +1038,25 @@ button.week-tile:focus-visible {
 
 .secret-sprite {
   position: absolute;
-  font-size: 2rem;
-  line-height: 1;
   will-change: transform;
 }
 
-.secret-sprite i {
+.secret-sprite > * {
   display: block;
-  width: 8px;
-  height: 12px;
-  border-radius: 2px;
+}
+
+/* The secrets' particles (web/src/secrets/particles.ts), drawn over everything. */
+.secrets-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
 }
 
 .secret-tap {
   padding: 0.5rem;
-  font-size: 3rem;
   cursor: pointer;
   pointer-events: auto;
   touch-action: manipulation;
@@ -1084,6 +1088,21 @@ button.week-tile:focus-visible {
 .secret-toast strong,
 .secret-toast span {
   display: block;
+}
+
+/* The site's bin before each find; an egg in an Easter egg hunt. */
+.secret-toast strong::before {
+  content: "";
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.4em;
+  vertical-align: -0.2em;
+  background: url(/favicon.svg) center / contain no-repeat;
+}
+
+.secret-toast.hunt strong::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 24'%3E%3Cellipse cx='10' cy='13' rx='8.5' ry='10.5' fill='%23ffc9de'/%3E%3Cpath d='M2 12l3-2 3 2 3-2 3 2 3-2 2 1.5' stroke='%23fff' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
 }
 
 .secret-toast span {

@@ -6,15 +6,15 @@
  */
 export const SECRETS = {
   easter: {
-    name: 'The Easter bunny',
+    name: 'The Easter bilby',
     fact: 'Scrunch chocolate foil into a ball the size of a fist, and many councils take it in recycling.',
   },
   christmas: {
-    name: 'Santa on his rounds',
-    fact: 'Scrunch wrapping paper: if it springs back open, it has plastic in it and goes in general waste.',
+    name: 'Santa catching a wave',
+    fact: 'Hot summer days make bins smelly. Freeze prawn shells and meat scraps until the night before bin day.',
   },
   halloween: {
-    name: 'A Halloween bat',
+    name: 'A Halloween flying fox',
     fact: 'Pumpkin leftovers can go in the green bin, if your council takes food scraps, or the compost.',
   },
   newyear: {
@@ -26,7 +26,7 @@ export const SECRETS = {
     fact: 'Lid colours: red for general waste, yellow for recycling, green for garden (and food), and in some places purple for glass.',
   },
   party: {
-    name: 'Recycling party',
+    name: 'Can-do party',
     fact: 'Aluminium cans can be recycled again and again, forever.',
   },
   quake: {

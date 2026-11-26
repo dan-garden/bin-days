@@ -1,3 +1,4 @@
+import { BILBY, BIN, FLYING_FOX, IBIS, KOALA, STAR, SURFING_SANTA } from './art.js';
 import {
   KONAMI_LENGTH,
   konami,
@@ -7,18 +8,8 @@ import {
   type SecretId,
   season,
 } from './catalogue.js';
-import {
-  across,
-  burst,
-  confetti,
-  honk,
-  jump,
-  type Point,
-  rain,
-  reduced,
-  sprite,
-  toast,
-} from './fx.js';
+import { across, honk, jump, type Point, reduced, sprite, toast } from './fx.js';
+import { confetti, emit, firework, shower } from './particles.js';
 
 /**
  * Secrets: hidden extras for kids (and everyone) to find, by tapping, typing, shaking or just
@@ -31,9 +22,6 @@ const FOUND = 'bin-days:secrets';
 const asked = new URLSearchParams(location.search).get('occasion');
 const occasion = SEASONS.find((name) => name === asked) ?? season(new Date());
 const hunt = occasion === 'easter';
-const BIN = '<img src="/favicon.svg" alt="" width="48" height="48">';
-const IBIS =
-  '<svg viewBox="0 0 64 44" width="76" height="52"><path d="M27 34l-3 9M35 34l2 9" stroke="#333" stroke-width="2"/><ellipse cx="30" cy="25" rx="17" ry="10" fill="#f3f0e8"/><path d="M12 24l-10 6 13-1z" fill="#333"/><path d="M44 21q6-14 12-9" stroke="#222" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M57 13q4 5 5 17" stroke="#222" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>';
 
 function foundSoFar(): Set<string> {
   try {
@@ -54,28 +42,47 @@ function find(id: SecretId, at: Point) {
   const total = Object.keys(SECRETS).length;
   const kind = hunt ? 'eggs' : 'secrets';
   toast(
-    `${hunt ? '🥚' : '♻️'} ${SECRETS[id].name}${first ? ` · ${found.size} of ${total} ${kind} found` : ''}`,
+    `${SECRETS[id].name}${first ? ` · ${found.size} of ${total} ${kind} found` : ''}`,
     SECRETS[id].fact,
+    hunt,
   );
-  // An Easter egg hunt: every find hatches eggs.
-  if (hunt && id !== 'easter') burst(at, ['🥚', '🐣'], 4);
+  // An Easter egg hunt: every find turns up eggs.
+  if (hunt) emit('egg', at.x, at.y, 6);
   if (first && found.size === total) confetti();
 }
 
 const middle = (): Point => ({ x: innerWidth / 2, y: innerHeight / 2 });
 
+/** Some of every kind of rubbish particle at a point. */
+const scatter = (at: Point, ...kinds: Parameters<typeof emit>[0][]) => {
+  for (const kind of kinds) emit(kind, at.x, at.y, 8);
+};
+
+/** A few fireworks over the top of the screen. */
+const fireworks = (count: number) => {
+  for (let i = 0; i < count; i++)
+    setTimeout(
+      () =>
+        firework(
+          innerWidth * (0.15 + Math.random() * 0.7),
+          innerHeight * (0.12 + Math.random() * 0.25),
+        ),
+      i * 450,
+    );
+};
+
 const EFFECTS: Record<SecretId, (at: Point) => void> = {
-  easter: (at) => burst(at, ['🥚', '🐣', '🌷']),
-  christmas: (at) => burst(at, ['🎁', '⭐', '🎄']),
-  halloween: (at) => burst(at, ['🍬', '🎃', '🍭']),
-  newyear: (at) => {
-    confetti();
-    burst(at, ['🎆', '✨']);
+  easter: (at) => emit('egg', at.x, at.y, 14),
+  christmas: (at) => {
+    scatter(at, 'spark', 'confetti');
+    shower('spark', 40, 2);
   },
+  halloween: (at) => scatter(at, 'leaf', 'spark'),
+  newyear: () => fireworks(6),
   bounce: () => confetti(),
   party: (at) => {
-    rain('🥫', 12);
-    burst(at, ['♻️', '🥫', '📦', '📰'], 12);
+    shower('can', 30);
+    emit('can', at.x, at.y, 10);
   },
   quake: () => {
     if (!reduced())
@@ -83,11 +90,11 @@ const EFFECTS: Record<SecretId, (at: Point) => void> = {
         [0, -12, 12, -9, 9, -4, 0].map((x) => ({ transform: `translateX(${x}px)` })),
         { duration: 600 },
       );
-    rain(BIN, 14);
+    shower('bin', 18, 1);
   },
   ibis: () => {
     across(IBIS, innerHeight - 110, { duration: 6500, bob: 6 });
-    setTimeout(() => burst({ x: innerWidth / 2, y: innerHeight - 90 }, ['🍟'], 5), 2600);
+    setTimeout(() => emit('chip', innerWidth / 2, innerHeight - 90, 12), 2600);
   },
   disco: () => {
     if (!reduced())
@@ -96,30 +103,30 @@ const EFFECTS: Record<SecretId, (at: Point) => void> = {
         iterations: 2,
       });
   },
-  peek: (at) => burst(at, ['👋', '💚']),
+  peek: (at) => emit('spark', at.x, at.y, 20),
   binday: (at) => {
     confetti();
-    burst(at, ['🎉', '🗑️', '🚛']);
+    emit('bin', at.x, at.y, 6);
   },
   truck: (at) => {
     honk();
-    burst(at, ['💨', '🎺'], 5);
+    emit('spark', at.x, at.y, 16, 180);
   },
-  flies: (at) => burst(at, ['🪰', '🪰', '💨'], 6),
-  lights: (at) => burst(at, ['💡', '✨'], 5),
+  flies: (at) => emit('fly', at.x, at.y, 9, 120),
+  lights: (at) => emit('spark', at.x, at.y, 14, 140),
   koala: (at) => {
     sprite(
-      '🐨',
+      KOALA,
       [
         { transform: 'translate(-50%, 0) scale(0.3)' },
-        { transform: 'translate(-50%, -90px) scale(1.4)', offset: 0.3 },
-        { transform: 'translate(-50%, -90px) scale(1.4)', offset: 0.8 },
+        { transform: 'translate(-50%, -90px) scale(1.2)', offset: 0.3 },
+        { transform: 'translate(-50%, -90px) scale(1.2)', offset: 0.8 },
         { transform: 'translate(-50%, 0) scale(0.3)', opacity: 0 },
       ],
       { duration: 2200, easing: 'ease-out' },
       at,
     );
-    burst(at, ['🍃', '🍂'], 6);
+    emit('leaf', at.x, at.y, 10);
   },
 };
 
@@ -129,25 +136,35 @@ export function play(id: SecretId, at: Point = middle()) {
   find(id, at);
 }
 
-/** What turns up on each occasion: something to catch as it goes by, with a bit of scenery. */
+/** What turns up on each occasion, the Australian way: something to catch as it goes by. */
 const PARADES: Record<Season, () => void> = {
   easter: () =>
-    across('🐇', innerHeight - 100, { duration: 7000, bob: 40, onTap: (at) => play('easter', at) }),
+    across(BILBY, innerHeight - 110, {
+      duration: 7000,
+      bob: 36,
+      onTap: (at) => play('easter', at),
+    }),
+  // Christmas is summer here: sunshine sparkles, and Santa out on the surf.
   christmas: () => {
-    rain('❄️', 24, 9000);
-    across('🎅', 90, { duration: 9000, bob: 14, onTap: (at) => play('christmas', at) });
+    shower('spark', 30, 6);
+    across(SURFING_SANTA, innerHeight - 130, {
+      duration: 9000,
+      bob: 10,
+      onTap: (at) => play('christmas', at),
+    });
   },
   halloween: () => {
-    for (let i = 0; i < 5; i++) across('🦇', 60 + i * 70, { duration: 5000 + i * 900, bob: 30 });
-    across('🦇', innerHeight / 2, {
-      duration: 6000,
-      bob: 40,
+    for (let i = 0; i < 3; i++)
+      across(FLYING_FOX, 60 + i * 90, { duration: 5500 + i * 900, bob: 24 });
+    across(FLYING_FOX, innerHeight / 2, {
+      duration: 6500,
+      bob: 30,
       onTap: (at) => play('halloween', at),
     });
   },
   newyear: () => {
-    confetti();
-    across('🥳', innerHeight / 2, { duration: 7000, bob: 24, onTap: (at) => play('newyear', at) });
+    fireworks(4);
+    across(STAR, innerHeight / 3, { duration: 7000, bob: 24, onTap: (at) => play('newyear', at) });
   },
 };
 
