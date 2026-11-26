@@ -13,8 +13,16 @@ const figure = (title: string, body: string, note?: string) =>
     note ? `<p class="chart-note">${escapeHtml(note)}</p>` : ''
   }</figure>`;
 
+/** A label, or a label that links to its own page. */
+export type Label = string | { text: string; href: string };
+const labelHtml = (label: Label) =>
+  typeof label === 'string'
+    ? escapeHtml(label)
+    : `<a href="${escapeHtml(label.href)}">${escapeHtml(label.text)}</a>`;
+const labelText = (label: Label) => (typeof label === 'string' ? label : label.text);
+
 export interface Share {
-  label: string;
+  label: Label;
   value: number;
   /** What `value` is out of. */
   of: number;
@@ -25,7 +33,7 @@ export function shareBars(title: string, rows: Share[], note?: string): string {
   const body = rows
     .map(({ label, value, of }) => {
       const share = percent(value, of);
-      return `<div class="chart-row" title="${escapeHtml(`${label}: ${value} of ${of} councils (${share}%)`)}"><span class="chart-label">${escapeHtml(label)}</span><span class="chart-track"><span class="chart-bar" style="width:${share}%"></span></span><span class="chart-value">${share}% <small>${value} of ${of}</small></span></div>`;
+      return `<div class="chart-row" title="${escapeHtml(`${labelText(label)}: ${value} of ${of} councils (${share}%)`)}"><span class="chart-label">${labelHtml(label)}</span><span class="chart-track"><span class="chart-bar" style="width:${share}%"></span></span><span class="chart-value">${share}% <small>${value} of ${of}</small></span></div>`;
     })
     .join('');
   return figure(title, body, note);
@@ -66,11 +74,11 @@ export function stackedBars(title: string, parts: string[], rows: Stack[], note?
 /** A plain table, for the numbers behind a chart and for anyone reading it aloud. */
 export function table(
   head: string[],
-  rows: Array<Array<string | number>>,
+  rows: Array<Array<Label | number>>,
   caption?: string,
 ): string {
-  const cells = (row: Array<string | number>, tag: string) =>
-    `<tr>${row.map((cell) => `<${tag}>${escapeHtml(String(cell))}</${tag}>`).join('')}</tr>`;
+  const cells = (row: Array<Label | number>, tag: string) =>
+    `<tr>${row.map((cell) => `<${tag}>${typeof cell === 'number' ? cell : labelHtml(cell)}</${tag}>`).join('')}</tr>`;
   return `<div class="table-scroll"><table>${caption ? `<caption>${escapeHtml(caption)}</caption>` : ''}<thead>${cells(head, 'th')}</thead><tbody>${rows.map((row) => cells(row, 'td')).join('')}</tbody></table></div>`;
 }
 

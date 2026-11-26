@@ -42,6 +42,7 @@ const SITE_LINKS = [
   ['/guides', 'Guides'],
   ['/which-bin', 'Which bin?'],
   ['/data/bin-collections', 'Data'],
+  ['/docs', 'API'],
   ['/about', 'About'],
   ['/privacy', 'Privacy'],
   ['/contact', 'Contact'],
@@ -61,6 +62,10 @@ export interface Page {
   body: string[];
   /** Structured data that is particular to this page, given the site's origin. */
   schema?: (origin: string) => object[];
+  /** Its own share image (1200 by 630), if it has one; otherwise the site's. */
+  image?: { path: string; alt: string };
+  /** For an article: when it was last checked (`YYYY-MM-DD`), and the section it's in. */
+  article?: { modified: string; section: string };
 }
 
 /** What every page tells search engines about itself, plus what the page adds. */
@@ -142,11 +147,26 @@ export function renderPage(
     meta('property', 'og:description', page.description),
     meta('property', 'og:url', url),
     meta('property', 'og:locale', 'en_AU'),
-    meta('property', 'og:image', `${origin}/og-image.png`),
+    meta('property', 'og:image', `${origin}${page.image?.path ?? '/og-image.png'}`),
     meta('property', 'og:image:width', '1200'),
     meta('property', 'og:image:height', '630'),
-    meta('property', 'og:image:alt', `${SITE_NAME}: which bins go out this week?`),
+    meta(
+      'property',
+      'og:image:alt',
+      page.image?.alt ?? `${SITE_NAME}: which bins go out this week?`,
+    ),
+    ...(page.article
+      ? [
+          meta('property', 'article:modified_time', page.article.modified),
+          meta('property', 'article:section', page.article.section),
+        ]
+      : []),
     meta('name', 'twitter:card', 'summary_large_image'),
+    meta(
+      'name',
+      'twitter:image:alt',
+      page.image?.alt ?? `${SITE_NAME}: which bins go out this week?`,
+    ),
     ...structuredData(origin, page).map(
       (item) => `<script type="application/ld+json">${scriptJson(item)}</script>`,
     ),

@@ -1,6 +1,8 @@
 import type { Article } from '../content/articles.js';
-import { GUIDES, GUIDES_PATH } from '../content/articles.js';
+import { ARTICLES, GUIDES, GUIDES_PATH } from '../content/articles.js';
+import { coverPath } from '../content/covers.js';
 import { type Faq, placeFaq } from '../content/faq.js';
+import { KIDS_GUIDES } from '../content/guides/kids/index.js';
 import { markdownToHtml, plainText } from '../content/markdown.js';
 import type { AustralianState } from '../core/types.js';
 import { AUSTRALIAN_STATES } from '../core/types.js';
@@ -304,11 +306,19 @@ export function suburbPage(council: CouncilInfo, suburb: Suburb): Page {
 export function articlePage(article: Article): Page {
   const isGuide = article.path.startsWith(`${GUIDES_PATH}/`);
   const html = article.html ?? markdownToHtml(article.body ?? '');
-  // A guide ends with the other guides, so a reader (and a crawler) can carry on.
-  const others = isGuide ? GUIDES.filter((guide) => guide.path !== article.path) : [];
-  const more = others.length
-    ? `\n<h2>More guides</h2>\n<ul>${others.map((guide) => `<li>${link(guide.path, guide.title)}</li>`).join('')}</ul>`
-    : '';
+  // A guide ends with the other guides in its series, so a reader (and a crawler) can carry on.
+  const kids = KIDS_GUIDES.includes(article);
+  const forKids = article.path.startsWith(`${GUIDES_PATH}/kids`);
+  const series = kids ? KIDS_GUIDES : isGuide ? GUIDES : [];
+  const others = series.filter((guide) => guide.path !== article.path);
+  const related = (article.related ?? []).flatMap((path) => ARTICLES.get(path) ?? []);
+  const more =
+    (related.length
+      ? `\n<h2>Related</h2>\n<ul>${related.map((page) => `<li>${link(page.path, page.title)}</li>`).join('')}</ul>`
+      : '') +
+    (others.length
+      ? `\n<h2>${kids ? 'More for kids' : 'More guides'}</h2>\n<ul>${others.map((guide) => `<li>${link(guide.path, guide.title)}</li>`).join('')}</ul>`
+      : '');
   return {
     path: article.path,
     title: article.seoTitle ?? `${article.title} | ${SITE_NAME}`,
@@ -316,7 +326,7 @@ export function articlePage(article: Article): Page {
     trail: [
       HOME,
       ...(isGuide ? [{ name: 'Guides', path: GUIDES_PATH }] : []),
-      ...(article.parent ? [article.parent] : []),
+      ...(article.parents ?? []),
       { name: article.title, path: article.path },
     ],
     data: {
@@ -324,6 +334,13 @@ export function articlePage(article: Article): Page {
       article: { html: html + more, updated: article.updated },
     },
     body: [html + more],
+    image: { path: coverPath(article), alt: article.title },
+    article: {
+      modified: article.updated,
+      section: forKids
+        ? 'For kids'
+        : (article.parents?.at(-1)?.name ?? (isGuide ? 'Guides' : SITE_NAME)),
+    },
     schema: (origin) => [
       {
         '@context': 'https://schema.org',
@@ -332,6 +349,20 @@ export function articlePage(article: Article): Page {
         description: article.description,
         dateModified: article.updated,
         url: origin + article.path,
+        mainEntityOfPage: origin + article.path,
+        image: origin + coverPath(article),
+        inLanguage: 'en-AU',
+        isAccessibleForFree: true,
+        ...(forKids
+          ? {
+              audience: {
+                '@type': 'PeopleAudience',
+                suggestedMinAge: 6,
+                suggestedMaxAge: 12,
+                audienceType: 'Children, parents and teachers',
+              },
+            }
+          : {}),
         author: { '@id': `${origin}/#organization` },
         publisher: { '@id': `${origin}/#organization` },
         isPartOf: { '@id': `${origin}/#website` },

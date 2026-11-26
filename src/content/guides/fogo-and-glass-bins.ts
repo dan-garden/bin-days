@@ -28,10 +28,11 @@ const food = (bin: { type: string; name: string }) =>
 export const fogoAndGlass: Article = {
   path: '/guides/fogo-and-glass-bins',
   title: 'Which councils have a FOGO or glass bin?',
-  seoTitle: 'FOGO and glass bins: which Australian councils have them | Bin Days',
+  seoTitle: 'FOGO and glass bins: which councils have them | Bin Days',
   description:
     'Food scraps in the green bin, and a purple bin for glass: which councils covered by Bin Days collect them, from what each council told us.',
   updated: '2026-11-25',
+  related: ['/data/bin-collections', '/which-bin/food-scraps', '/which-bin/glass-bottles-and-jars'],
   body: `
 More councils are adding two kinds of bin:
 

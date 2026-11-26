@@ -7,6 +7,7 @@ export const missedCollection: Article = {
   description:
     'Your bin was left full at the kerb. Check these things first, then report it to your council the right way.',
   updated: '2026-11-25',
+  related: ['/which-bin'],
   body: `
 ## Check these first
 

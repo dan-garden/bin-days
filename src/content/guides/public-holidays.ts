@@ -3,10 +3,11 @@ import type { Article } from '../articles.js';
 export const publicHolidays: Article = {
   path: '/guides/public-holidays',
   title: 'Bin day on public holidays',
-  seoTitle: 'Bin day on public holidays: Christmas, New Year and long weekends | Bin Days',
+  seoTitle: 'Bin day on public holidays, Christmas and New Year | Bin Days',
   description:
     "Does the bin truck come on a public holiday? It depends on your council. Here's how to check, and how Bin Days shows dates a holiday might move.",
   updated: '2026-11-25',
+  related: ['/data/bin-collections'],
   body: `
 Every council sets its own rules for public holidays, so there isn't one answer for Australia.
 

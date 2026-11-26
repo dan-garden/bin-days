@@ -3,10 +3,11 @@ import type { Article } from '../articles.js';
 export const binDayCalendar: Article = {
   path: '/guides/bin-day-calendar',
   title: 'Put your bin days in your calendar',
-  seoTitle: 'Bin day reminders: add your bin days to Google, Apple or Outlook calendar | Bin Days',
+  seoTitle: 'Bin day reminders: add bin days to your calendar | Bin Days',
   description:
     'Add a year of your bin days to Google, Apple or Outlook calendar, with a reminder the night before. It updates itself, and needs no app or account.',
   updated: '2026-11-25',
+  related: ['/which-bin'],
   body: `
 Bin Days can put your bin days straight into the calendar on your phone. You subscribe once, and your calendar keeps itself up to date: if your council changes a date, it changes in your calendar too.
 

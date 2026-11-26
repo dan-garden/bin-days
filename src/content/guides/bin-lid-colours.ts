@@ -3,10 +3,11 @@ import type { Article } from '../articles.js';
 export const lidColours: Article = {
   path: '/guides/bin-lid-colours',
   title: 'What each bin lid colour means',
-  seoTitle: 'Bin lid colours in Australia: red, yellow, green, purple and blue | Bin Days',
+  seoTitle: 'Bin lid colours in Australia: what each colour means | Bin Days',
   description:
     'Red, yellow, lime green, purple, blue: what each wheelie bin lid colour is for in Australia, and why your council might differ.',
   updated: '2026-11-25',
+  related: ['/which-bin', '/guides/kids/which-bin', '/data/bin-collections'],
   body: `
 Most Australian councils use the same lid colours, so a bin means much the same from one town to the next. Your council has the final say, though, and some older bins don't match.
 

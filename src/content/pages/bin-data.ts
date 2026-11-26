@@ -1,5 +1,6 @@
 import { binsOf, lidColour } from '../../councils/bins.js';
 import { ALL_COUNCILS } from '../../councils/index.js';
+import { statePath } from '../../councils/names.js';
 import { binStats, FREQUENCIES, STAT_BINS, type StatBin } from '../../councils/stats.js';
 import type { Article } from '../articles.js';
 import { shareBars, stackedBars, stats, table } from '../charts.js';
@@ -68,11 +69,19 @@ The figures come from each council's own bin day service, as Bin Days reads it f
   md('## Organics and food scraps, by state'),
   shareBars(
     'Councils that take food scraps (FOGO)',
-    s.states.map((state) => ({ label: state.name, value: state.fogo, of: state.councils })),
+    s.states.map((state) => ({
+      label: { text: state.name, href: statePath(state.state) },
+      value: state.fogo,
+      of: state.councils,
+    })),
   ),
   shareBars(
     'Councils with an organics bin',
-    s.states.map((state) => ({ label: state.name, value: state.organics, of: state.councils })),
+    s.states.map((state) => ({
+      label: { text: state.name, href: statePath(state.state) },
+      value: state.organics,
+      of: state.councils,
+    })),
   ),
   md(`## Every state at a glance
 
@@ -80,7 +89,7 @@ Bin Days covers more councils in some states than others, so a state with few co
   table(
     ['State', 'Councils', 'Weekly general waste', 'Organics bin', 'FOGO', 'Glass bin'],
     s.states.map((state) => [
-      state.name,
+      { text: state.name, href: statePath(state.state) },
       state.councils,
       `${share(state.weeklyGeneral, state.councils)}%`,
       `${share(state.organics, state.councils)}%`,
@@ -123,9 +132,11 @@ Bin Days reads each council's own bin day service: a lookup on its website, a ma
 export const binData: Article = {
   path: DATA_PATH,
   title: 'Australian bin collection data',
-  seoTitle: 'Australian bin collection data: how often councils collect each bin | Bin Days',
+  seoTitle: 'Australian bin collection data and statistics | Bin Days',
   description: `How often ${s.councils} Australian councils collect each bin, which take food scraps, and their lid colours, with free data to download.`,
   updated: CHECKED,
+  related: ['/guides/fogo-and-glass-bins', '/guides/bin-lid-colours', '/which-bin', '/guides/kids'],
+  parents: [{ name: 'Guides', path: '/guides' }],
   html,
   schema: (origin) => [
     {

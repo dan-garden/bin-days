@@ -107,6 +107,7 @@ Contributions are welcome, and the most useful one is a new council.
    ```
 
 4. If you changed anything in `web/`, run `npm run build:web` and commit the `public/` folder with it.
+5. If you added or renamed a guide or a "which bin" item, run `npm run build:covers` (it needs Chrome) to draw its share image, then `npm run build:web`.
 
 Found a wrong bin day, or an address that should work and doesn't? [Open an issue](https://github.com/dan-garden/bin-days/issues) with the address and the council.
 

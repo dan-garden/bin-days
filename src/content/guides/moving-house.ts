@@ -7,6 +7,7 @@ export const movingHouse: Article = {
   description:
     'Just moved in? How to find your new bin day, check which bins your new place has, and sort out missing or damaged bins.',
   updated: '2026-11-25',
+  related: ['/which-bin', '/data/bin-collections'],
   body: `
 ## Find your new bin day
 

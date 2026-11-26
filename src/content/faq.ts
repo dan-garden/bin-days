@@ -1,5 +1,6 @@
 import { binsOf, describeBins, listBins } from '../councils/bins.js';
 import { shortCouncilName, sourceDescription } from '../councils/names.js';
+import { takesFood } from '../councils/stats.js';
 
 /** A question and its answer, in the site's Markdown. */
 export interface Faq {
@@ -50,6 +51,23 @@ export function placeFaq({ council, suburb }: Place): Faq[] {
         lessOften.length &&
           `${capitalise(listBins(lessOften))} ${lessOften.length > 1 ? "aren't" : "isn't"} collected every week, and which week depends on your street.`,
         "Look up your address to see this week's bins and the weeks after.",
+      ]
+        .filter(Boolean)
+        .join(' '),
+    },
+    {
+      question: `What goes in each bin in ${where}?`,
+      answer: [
+        'Red lids are for general waste, yellow for recycling and green for garden waste.',
+        bins.some(takesFood)
+          ? `${council.name} also takes food scraps in the green bin (FOGO).`
+          : bins.some((bin) => bin.type === 'organics')
+            ? 'Check before putting food scraps in the green bin: many councils only take garden waste.'
+            : '',
+        bins.some((bin) => bin.type === 'glass')
+          ? 'Glass bottles and jars go in the purple-lid glass bin.'
+          : '',
+        'For tricky things like pizza boxes, batteries and soft plastics, see [Which bin does it go in?](/which-bin). Teaching the kids? Try [Which bin? A guide for kids](/guides/kids/which-bin), or see how councils compare in the [Australian bin collection data](/data/bin-collections).',
       ]
         .filter(Boolean)
         .join(' '),
