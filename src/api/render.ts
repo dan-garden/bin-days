@@ -154,7 +154,7 @@ export function renderPage(
   const shellHtml = `<div class="shell">
 <div class="shell-topbar">${link('/', SITE_NAME)}</div>
 ${trail}
-<div class="hero${page.trail.length > 1 ? ' hero-compact' : ''}">
+<div class="hero${page.trail.length > 1 ? ' hero-compact' : ''}${page.data.address ? ' hero-answered' : ''}">
 <div class="shell-bins"></div>
 <h1 class="hero-title">${escapeHtml(title)}</h1>
 <p class="hero-lede">${escapeHtml(lede)}</p>

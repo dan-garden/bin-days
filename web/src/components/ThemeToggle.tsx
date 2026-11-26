@@ -9,6 +9,7 @@ export function ThemeToggle() {
       variant="subtle"
       color="gray"
       radius="xl"
+      className="theme-toggle"
       aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
       onClick={() => setColorScheme(dark ? 'light' : 'dark')}
     >

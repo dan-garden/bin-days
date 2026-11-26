@@ -1,10 +1,29 @@
-import { Anchor, Badge, Group, Paper, Stack, Text, Title, Tooltip } from '@mantine/core';
+import {
+  Anchor,
+  Badge,
+  Group,
+  Paper,
+  Stack,
+  Text,
+  Title,
+  Tooltip,
+  useComputedColorScheme,
+} from '@mantine/core';
 import { m } from 'motion/react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import type { Bin, BinDaysResult, CollectionDay, ServiceSummary } from '../api.js';
-import { daysUntil, formatDate, lidPaint, lidStripe, relativeDay } from '../lib.js';
+import { daysUntil, formatDate, lidPaint, lidStripe, relativeDay, tidyAddress } from '../lib.js';
+import { canDraw3d } from '../webgl.js';
 import { BinIcon } from './BinIcon.js';
 import { SaveAndShare } from './SaveAndShare.js';
 import { ServiceChip } from './ServiceChip.js';
+import { WEEK, WeekStrip } from './WeekStrip.js';
+
+// The 3D street and its library load only once there's a result, and only where they can be drawn.
+const StreetScene = lazy(() => import('./street/StreetScene.js'));
+
+/** Bins that go out at the kerb; the street has no room for hard waste and the like. */
+const KERBSIDE = new Set(['general', 'recycling', 'organics', 'food', 'glass']);
 
 const PROJECTED = 'Estimated from the regular cycle. Public holidays can shift it.';
 
@@ -18,10 +37,30 @@ const rise = {
   shown: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24 } },
 } as const;
 
-export function Result({ result }: { result: BinDaysResult }) {
+export function Result({ result, onShown }: { result: BinDaysResult; onShown?: () => void }) {
+  // Lets the page add what goes below the answer only once the answer is on screen.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when first shown.
+  useEffect(() => onShown?.(), []);
   const { next, today, council, address } = result;
-  const later = result.days.filter((day) => day.date !== next?.date);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when first shown.
+  useEffect(() => {
+    if (next?.date === today)
+      import('../secrets/index.js').then((secrets) => secrets.play('binday'));
+  }, []);
+  // The day the street shows: the next collection, until another is chosen in the week.
+  const [selected, setSelected] = useState<string>(next?.date ?? today);
+  const chosen = result.days.find((day) => day.date === selected) ?? next;
+  const later = result.days.filter((day) => daysUntil(day.date, today) >= WEEK);
   const estimated = result.days.some((day) => day.bins.some((b) => b.confidence === 'projected'));
+  const night = useComputedColorScheme('light') === 'dark';
+  const street = result.services
+    .filter((service) => KERBSIDE.has(service.type))
+    .map((service) => ({
+      type: service.type,
+      name: service.name,
+      colour: service.colour,
+      due: !!chosen?.bins.some((bin) => bin.name === service.name),
+    }));
 
   return (
     <m.div
@@ -32,29 +71,54 @@ export function Result({ result }: { result: BinDaysResult }) {
     >
       <Stack gap="lg">
         <m.div variants={rise}>
-          <Text c="dimmed" size="sm">
-            {address.matched} · {council.name}
-            {' · '}
-            <Anchor href="#area" inherit>
-              Show on map
-            </Anchor>
-          </Text>
+          {next && chosen && canDraw3d() ? (
+            <Paper
+              className="next-card street-card"
+              radius="lg"
+              style={{ '--lids': lidStripe(chosen.bins) }}
+            >
+              {/* First, so a phone shows the answer before the picture. */}
+              <StreetCaption
+                day={chosen}
+                today={today}
+                isNext={chosen.date === next.date}
+                place={<Place address={address.matched} council={council.name} />}
+              />
+              <Suspense fallback={<div className="street-canvas" />}>
+                <StreetScene
+                  bins={street}
+                  play={`${address.matched}|${chosen.date}`}
+                  night={night}
+                />
+              </Suspense>
+            </Paper>
+          ) : (
+            <Paper
+              className="next-card"
+              radius="lg"
+              p={{ base: 'lg', sm: 'xl' }}
+              style={{ '--lids': lidStripe(next?.bins ?? []) }}
+            >
+              <Place address={address.matched} council={council.name} />
+              {next ? (
+                <NextCollection day={next} today={today} />
+              ) : (
+                <Title order={2}>No upcoming collections found</Title>
+              )}
+            </Paper>
+          )}
         </m.div>
 
-        <m.div variants={rise}>
-          <Paper
-            className="next-card"
-            radius="lg"
-            p={{ base: 'lg', sm: 'xl' }}
-            style={{ '--lids': lidStripe(next?.bins ?? []) }}
-          >
-            {next ? (
-              <NextCollection day={next} today={today} />
-            ) : (
-              <Title order={2}>No upcoming collections found</Title>
-            )}
-          </Paper>
-        </m.div>
+        {next && (
+          <m.div variants={rise}>
+            <WeekStrip
+              days={result.days}
+              today={today}
+              selected={selected}
+              onSelect={setSelected}
+            />
+          </m.div>
+        )}
 
         {later.length > 0 && (
           <m.div variants={rise}>
@@ -97,6 +161,67 @@ export function Result({ result }: { result: BinDaysResult }) {
         </m.div>
       </Stack>
     </m.div>
+  );
+}
+
+/** What the street shows, in words: over the scene's sky, and all a screen reader needs. */
+function StreetCaption({
+  day,
+  today,
+  isNext,
+  place,
+}: {
+  day: CollectionDay;
+  today: string;
+  isNext: boolean;
+  place: React.ReactNode;
+}) {
+  const nudge = daysUntil(day.date, today) === 1 ? 'Put them out tonight.' : undefined;
+  return (
+    <div className="street-caption" aria-live="polite">
+      <Text className="eyebrow">{isNext ? 'Next collection' : 'Collection'}</Text>
+      <Title order={2} className="next-when">
+        {relativeDay(day.date, today)}
+      </Title>
+      <Text size="lg" fw={600}>
+        {formatDate(day.date, { weekday: 'long', day: 'numeric', month: 'long' })}
+        {nudge && <Text span c="dimmed">{` · ${nudge}`}</Text>}
+      </Text>
+      <Group gap={6} mt={8}>
+        {day.bins.map((bin) => (
+          <span
+            key={bin.name}
+            className="caption-bin"
+            style={{ '--lid': lidPaint(bin) } as React.CSSProperties}
+          >
+            {bin.name}
+            {bin.confidence === 'projected' && <Estimated />}
+          </span>
+        ))}
+      </Group>
+      {place}
+    </div>
+  );
+}
+
+/**
+ * Which property, and which council, the answer is for, as the council knows them. Worth showing:
+ * it's how a visitor spots that a street of the same name elsewhere was matched.
+ */
+function Place({ address, council }: { address: string; council: string }) {
+  return (
+    <Text className="place" size="sm" c="dimmed">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+        <path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11Z" />
+        <circle cx="12" cy="10" r="2.3" />
+      </svg>
+      <span>
+        {tidyAddress(address)} ·{' '}
+        <Anchor href="#area" inherit>
+          {council}
+        </Anchor>
+      </span>
+    </Text>
   );
 }
 
