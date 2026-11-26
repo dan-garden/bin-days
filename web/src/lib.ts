@@ -1,3 +1,4 @@
+import { titleCase } from '../../src/core/address.js';
 import type { AustralianState, BinType } from '../../src/core/types.js';
 
 /** Pure helpers for the UI: dates, bin colours and map geometry. No DOM, so they're unit tested. */
@@ -25,7 +26,7 @@ export function formatDate(date: string, options: Intl.DateTimeFormatOptions): s
 }
 
 /** Lid colours as the API names them, as paint. */
-const LID_PAINT: Record<string, string> = {
+export const LID_PAINT: Record<string, string> = {
   red: '#e03131',
   yellow: '#fcc419',
   lime: '#82c91e',
@@ -78,3 +79,11 @@ export function groupByState<T extends { state: AustralianState; name: string }>
     ])
     .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
 }
+
+const STATE_CODES = /^(ACT|NSW|NT|QLD|SA|TAS|VIC|WA)$/;
+
+/** A council's address line, made readable: "4/37 Ward Street, SOUTHPORT 4215" reads "Southport". */
+export const tidyAddress = (line: string) =>
+  line
+    .replace(/\b[A-Z][A-Z'-]+\b/g, (word) => (STATE_CODES.test(word) ? word : titleCase(word)))
+    .replace(/\s+/g, ' ');

@@ -1,22 +1,59 @@
-<!-- The picture shown when a link to the site is shared. After editing, rebuild the PNG:
-     convert -background none web/og-image.svg web/public/og-image.png -->
+<!-- The picture shown when a link to the site is shared. After editing, rebuild
+     web/public/og-image.png at 1200 by 630 with a browser, such as a headless Chrome
+     screenshot of this file; ImageMagick drops the gradients. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <title>Bin Days</title>
   <defs>
-    <g id="bin">
-      <circle cx="45" cy="62" r="6" fill="#1b1f1d" />
-      <path d="M15 25H49L45.5 60Q45.2 64 41.5 64H22.5Q18.8 64 18.5 60Z" fill="#2f3b36" />
-    </g>
-    <path id="lid" d="M11 27V22Q11 16 17 16H47Q53 16 53 22V27Z" />
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d6c6f6" />
+      <stop offset=".6" stop-color="#f6cdd3" />
+      <stop offset="1" stop-color="#ffe1bf" />
+    </linearGradient>
   </defs>
-  <rect width="1200" height="630" fill="#f5f7f1" />
-  <g transform="translate(232 30) scale(3)">
-    <use href="#bin" /><use href="#lid" fill="#e03131" />
-    <use href="#bin" x="62" /><use href="#lid" x="62" fill="#fcc419" />
-    <use href="#bin" x="124" /><use href="#lid" x="124" fill="#2f9e44" />
-    <use href="#bin" x="186" /><use href="#lid" x="186" fill="#9c36b5" />
+  <rect width="1200" height="630" fill="url(#sky)" />
+  <circle cx="1050" cy="120" r="56" fill="#fff3d6" opacity=".9" />
+  <!-- houses -->
+  <g transform="translate(50 0)">
+    <rect x="560" y="300" width="190" height="140" rx="8" fill="#f4a6a6" />
+    <path d="M545 305 L655 225 L765 305 Z" fill="#5b4a6b" />
+    <rect x="590" y="335" width="40" height="36" rx="4" fill="#ffcf70" />
+    <rect x="680" y="335" width="40" height="36" rx="4" fill="#ffcf70" />
+    <rect x="790" y="285" width="200" height="155" rx="8" fill="#ffe0a3" />
+    <path d="M775 290 L890 205 L1005 290 Z" fill="#5b4a6b" />
+    <rect x="822" y="322" width="42" height="38" rx="4" fill="#ffcf70" />
+    <rect x="916" y="322" width="42" height="38" rx="4" fill="#ffcf70" />
+    <rect x="1020" y="310" width="180" height="130" rx="8" fill="#b9d7f4" />
+    <path d="M1005 315 L1110 240 L1215 315 Z" fill="#5b4a6b" />
   </g>
-  <text x="600" y="380" text-anchor="middle" font-family="DejaVu Sans" font-weight="bold" font-size="104" fill="#1b1f1d">Bin Days</text>
-  <text x="600" y="462" text-anchor="middle" font-family="DejaVu Sans" font-size="44" fill="#2f3b36">Which bins go out this week?</text>
-  <text x="600" y="548" text-anchor="middle" font-family="DejaVu Sans" font-weight="bold" font-size="36" fill="#2f9e44">bindays.au</text>
+  <!-- lawn, footpath, kerb, road -->
+  <rect x="0" y="440" width="1200" height="44" fill="#9fd47e" />
+  <rect x="0" y="484" width="1200" height="18" fill="#e8e2d8" />
+  <rect x="0" y="502" width="1200" height="128" fill="#4a4656" />
+  <g fill="#fcc419"><rect x="40" y="562" width="90" height="8" rx="4" /><rect x="230" y="562" width="90" height="8" rx="4" /><rect x="420" y="562" width="90" height="8" rx="4" /><rect x="610" y="562" width="90" height="8" rx="4" /><rect x="800" y="562" width="90" height="8" rx="4" /><rect x="990" y="562" width="90" height="8" rx="4" /></g>
+  <!-- bins at the kerb -->
+  <g transform="translate(50 0)">
+    <path d="M818 426 H866 L862 484 Q861 490 855 490 H829 Q823 490 822 484 Z" fill="#2b2d3a" />
+    <rect x="812" y="414" width="60" height="14" rx="5" fill="#e03131" />
+    <path d="M884 426 H932 L928 484 Q927 490 921 490 H895 Q889 490 888 484 Z" fill="#2b2d3a" />
+    <rect x="878" y="414" width="60" height="14" rx="5" fill="#82c91e" />
+  </g>
+  <!-- the truck -->
+  <g>
+    <rect x="470" y="420" width="230" height="110" rx="14" fill="#2f9e44" />
+    <rect x="490" y="440" width="190" height="12" rx="6" fill="#fcc419" />
+    <path d="M700 448 H760 Q772 448 778 460 L792 490 V530 H700 Z" fill="#2b8a3e" />
+    <path d="M712 458 H752 Q760 458 764 466 L774 488 H712 Z" fill="#cfe8ff" />
+    <circle cx="790" cy="512" r="7" fill="#fff4c2" />
+    <circle cx="530" cy="534" r="26" fill="#1d1a1f" /><circle cx="530" cy="534" r="10" fill="#868e96" />
+    <circle cx="740" cy="534" r="26" fill="#1d1a1f" /><circle cx="740" cy="534" r="10" fill="#868e96" />
+  </g>
+  <!-- words -->
+  <g font-family="DejaVu Sans">
+    <g transform="translate(70 70)">
+      <rect width="22" height="16" rx="4" fill="#e03131" /><rect x="24" width="22" height="16" fill="#fcc419" /><rect x="48" width="22" height="16" fill="#82c91e" /><rect x="72" width="22" height="16" rx="4" fill="#9c36b5" />
+    </g>
+    <text x="70" y="190" font-weight="bold" font-size="104" fill="#1d1a2b">Bin Days</text>
+    <text x="72" y="252" font-size="40" fill="#3b3550">Which bins go out this week?</text>
+    <text x="72" y="320" font-weight="bold" font-size="32" fill="#2b8a3e">bindays.au</text>
+  </g>
 </svg>

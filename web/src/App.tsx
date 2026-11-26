@@ -95,7 +95,20 @@ type Lookup =
 
 export function App() {
   const [address, setAddress] = useState(shared ?? returningTo);
-  const [lookup, setLookup] = useState<Lookup>({ status: 'idle' });
+  // A page that looks an address up as it opens starts out loading, and holds back what goes
+  // below the answer until the answer is in, so nothing on screen jumps down when it arrives.
+  const [lookup, setLookup] = useState<Lookup>(() =>
+    address ? { status: 'loading' } : { status: 'idle' },
+  );
+  const [opening, setOpening] = useState(!!address);
+  // Until the answer (or the error) is on screen, not just back from the server.
+  const holding = opening;
+  // With an answer to show, the welcome folds away so the street comes up the screen. A shared
+  // link starts that way, as the server painted it.
+  const folded = !!shared || lookup.status === 'done';
+  useEffect(() => {
+    if (lookup.status === 'failed') setOpening(false);
+  }, [lookup.status]);
   // The server puts the council list in the page; it is only fetched if that is missing.
   const [councils, setCouncils] = useState<CouncilLink[]>(page.councils ?? []);
   const request = useRef<AbortController>(null);
@@ -153,7 +166,8 @@ export function App() {
       <header className="topbar">
         <Anchor href="/" c="inherit" underline="never">
           <Group gap={8}>
-            <BinIcon type="general" size={28} />
+            {/* The favicon, 25px so the name sits where the server's first paint put it. */}
+            <img src="/favicon.svg" alt="" width={25} height={25} className="brand-mark" />
             <Text fw={700} size="lg">
               Bin Days
             </Text>
@@ -200,7 +214,11 @@ export function App() {
             )}
           </Breadcrumbs>
         )}
-        <section className={isHome ? 'hero' : 'hero hero-compact'}>
+        <section
+          className={['hero', !isHome && 'hero-compact', folded && 'hero-answered']
+            .filter(Boolean)
+            .join(' ')}
+        >
           <m.div
             className="hero-bins"
             initial="hidden"
@@ -260,7 +278,7 @@ export function App() {
                 )}
                 {lookup.status === 'done' && (
                   <Suspense key={lookup.result.address.matched} fallback={null}>
-                    <Result result={lookup.result} />
+                    <Result result={lookup.result} onShown={() => setOpening(false)} />
                   </Suspense>
                 )}
                 {lookup.status === 'failed' && (
@@ -276,7 +294,7 @@ export function App() {
               </AnimatePresence>
             </section>
 
-            {council && (
+            {!holding && council && (
               <CouncilAbout
                 // A different council gets a fresh map rather than a flight across the country.
                 key={council.id}
@@ -289,10 +307,10 @@ export function App() {
                   : {})}
               />
             )}
-            {page.faq && council?.id === page.council?.id && <Faq faq={page.faq} />}
+            {!holding && page.faq && council?.id === page.council?.id && <Faq faq={page.faq} />}
             {/* Browsing for a council: the whole section before a lookup, a short list after one.
                 A council's own page leaves it out and links to its state instead. */}
-            {page.state ? (
+            {holding ? null : page.state ? (
               <StateDirectory state={page.state} councils={councils} compact={!!council} />
             ) : (
               !page.council && <HomeDirectory councils={councils} compact={!!council} />
@@ -301,7 +319,7 @@ export function App() {
         )}
       </main>
 
-      <footer className="footer">
+      <footer className="footer" hidden={holding}>
         <Text size="sm" c="dimmed">
           Dates come from each council's published calendar. Check with your council around public
           holidays. Bin Days is free and open:{' '}

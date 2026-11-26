@@ -19,6 +19,9 @@
   --card: #fff;
   --card-border: rgb(30 30 20 / 0.1);
   --card-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -16px rgb(0 0 0 / 0.18);
+  --sky-1: #ebe2fb;
+  --sky-2: #fbe3dc;
+  --street-sky: linear-gradient(180deg, #d6c6f6 0%, #f6cdd3 55%, #ffe1bf 100%);
 }
 
 [data-mantine-color-scheme="dark"] {
@@ -28,6 +31,9 @@
   --card: #1b1d1d;
   --card-border: rgb(255 255 255 / 0.09);
   --card-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  --sky-1: #151a35;
+  --sky-2: #1a1830;
+  --street-sky: linear-gradient(180deg, #0f1430 0%, #1a2142 60%, #262a4a 100%);
 }
 
 /* Mantine's "dimmed" grey is too faint on these backgrounds to read comfortably. */
@@ -41,6 +47,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* The full-width street is as wide as the window, scrollbar included. */
+  overflow-x: clip;
 }
 
 /* Links in the server's first paint are underlined like the app's, so they don't rely on colour alone. */
@@ -50,7 +58,10 @@ html {
 }
 
 body {
-  background: var(--page);
+  /* Dusk at the top of the page, fading into the page colour; night in dark mode. */
+  background:
+    linear-gradient(180deg, var(--sky-1) 0, var(--sky-2) 22rem, var(--page) 46rem) no-repeat,
+    var(--page);
 }
 
 /* The four lids along the top of every page. On the body, so it is there from the first paint. */
@@ -605,6 +616,62 @@ body::before {
   font-size: clamp(2.2rem, 6.5vw, 3.75rem);
 }
 
+/*
+ * Once there's an answer, the welcome folds away (the bins and the line under the heading) and the
+ * heading shrinks, so the answer's street comes up into view, above the fold on a phone.
+ */
+.hero,
+.hero .hero-title,
+.hero .hero-bins,
+.hero .shell-bins,
+.hero .hero-lede {
+  transition:
+    padding 0.5s ease,
+    font-size 0.5s ease,
+    height 0.5s ease,
+    max-height 0.5s ease,
+    margin 0.5s ease,
+    opacity 0.3s ease;
+}
+
+.hero .hero-lede {
+  max-height: 6rem;
+  overflow: hidden;
+}
+
+.hero-answered {
+  padding-block: 1rem 1.25rem;
+}
+
+.hero-answered .hero-bins,
+.hero-answered .shell-bins {
+  height: 0;
+  margin-bottom: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.hero-answered .hero-title {
+  font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+  margin-bottom: 1rem;
+}
+
+.hero-answered .hero-lede {
+  max-height: 0;
+  margin-block: 0;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero,
+  .hero .hero-title,
+  .hero .hero-bins,
+  .hero .shell-bins,
+  .hero .hero-lede {
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .state-card:hover {
     transform: none;
@@ -727,4 +794,301 @@ body::before {
 
 .faq-item .prose {
   padding-bottom: 0.9rem;
+}
+
+/* The answer as a street: the 3D scene on a sky, with the day written over it. */
+.street-card {
+  padding: 0;
+  /* Across the whole window, fading into the page above and below: no box around the street. */
+  margin-inline: calc(50% - 50vw);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--street-sky);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 86%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 86%, transparent);
+}
+
+.street-card::before {
+  display: none;
+}
+
+.street-canvas {
+  height: clamp(300px, 46vw, 460px);
+}
+
+.street-caption {
+  padding: 1.25rem 1.25rem 0;
+}
+
+/* Matches CAPTION_BESIDE in StreetScene.tsx: narrower, the card sits above the street instead. */
+@media (min-width: 75em) {
+  /* Over the sky, on frosted glass so it reads against the houses too. */
+  .street-caption {
+    position: absolute;
+    z-index: 1;
+    top: 3rem;
+    /* Toward the left edge, leaving the middle for the truck (see Camera in StreetScene.tsx). */
+    left: max(1.25rem, calc(50vw - 40rem));
+    max-width: 24rem;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--card) 72%, transparent);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--card-shadow);
+  }
+
+  .street-canvas {
+    height: clamp(420px, 40vw, 540px);
+  }
+}
+
+@media (min-width: 48em) and (max-width: 74.99em) {
+  .street-caption {
+    max-width: 46rem;
+    margin-inline: auto;
+    padding: 2rem 1.25rem 0;
+  }
+
+  .street-canvas {
+    height: clamp(380px, 48vw, 480px);
+  }
+}
+
+.place {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  line-height: 1.35;
+}
+
+.next-card > .place {
+  margin: 0 0 0.75rem;
+}
+
+.place svg {
+  flex: none;
+  margin-top: 0.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.caption-bin {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem 0.2rem 0.3rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.caption-bin::before {
+  content: "";
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--lid);
+}
+
+/* The next seven days, each a tile showing its bins. */
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.week-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 100%;
+  min-height: 6.5rem;
+  padding: 0.6rem 0.2rem 0.7rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+  color: inherit;
+  font: inherit;
+}
+
+button.week-tile {
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+button.week-tile:hover {
+  transform: translateY(-2px);
+}
+
+button.week-tile:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+.week-tile.is-today {
+  background: var(--mantine-color-text);
+  color: var(--mantine-color-body);
+}
+
+.week-tile.is-selected {
+  box-shadow: 0 0 0 3px var(--lid-yellow);
+}
+
+.week-day {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.week-date {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Little bins, in their lid colours. */
+.week-bins {
+  display: flex;
+  gap: 3px;
+  margin-top: auto;
+}
+
+.week-bins i {
+  position: relative;
+  width: 14px;
+  height: 20px;
+  border-radius: 2px 2px 4px 4px;
+  background: var(--bin-body);
+}
+
+.week-bins i::before {
+  content: "";
+  position: absolute;
+  inset: -3px -2px auto;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--lid);
+}
+
+@media (max-width: 30em) {
+  .week-strip {
+    gap: 0.25rem;
+  }
+
+  .week-tile {
+    min-height: 5.25rem;
+    border-radius: 0.6rem;
+  }
+
+  .week-date {
+    font-size: 1.15rem;
+  }
+
+  .week-day {
+    font-size: 0.6rem;
+  }
+
+  .week-bins i {
+    width: 9px;
+    height: 14px;
+  }
+}
+
+.week-tile-body {
+  display: contents;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.week-tile {
+    transition: none;
+  }
+}
+
+/* Secrets (web/src/secrets): a layer over the page that only takes taps on the thing to tap. */
+.secrets {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.secret-sprite {
+  position: absolute;
+  font-size: 2rem;
+  line-height: 1;
+  will-change: transform;
+}
+
+.secret-sprite i {
+  display: block;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.secret-tap {
+  padding: 0.5rem;
+  font-size: 3rem;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.secret-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  z-index: 401;
+  /* Centred from the middle, it would otherwise only get half the screen to wrap in. */
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+  text-align: center;
+  transform: translate(-50%, 200%);
+  transition: transform 0.3s ease;
+}
+
+.secret-toast.shown {
+  transform: translate(-50%, 0);
+}
+
+.secret-toast strong,
+.secret-toast span {
+  display: block;
+}
+
+.secret-toast span {
+  max-width: 26rem;
+  margin-top: 0.15rem;
+  font-size: 0.9rem;
+  color: var(--mantine-color-dimmed);
 }

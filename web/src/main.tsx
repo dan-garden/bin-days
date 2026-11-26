@@ -75,3 +75,7 @@ if (root) {
     </StrictMode>,
   );
 }
+
+// The hidden extras load once the page has a moment, so they never slow it down.
+const later = window.requestIdleCallback ?? ((task: () => void) => setTimeout(task, 1500));
+later(() => import('./secrets/index.js').then((secrets) => secrets.startSecrets()));

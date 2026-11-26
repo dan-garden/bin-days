@@ -1,6 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 72">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>Bin Days</title>
-  <circle cx="45" cy="62" r="6" fill="#1b1f1d" />
-  <path d="M15 25H49L45.5 60Q45.2 64 41.5 64H22.5Q18.8 64 18.5 60Z" fill="#2f3b36" />
-  <path d="M11 27V22Q11 16 17 16H47Q53 16 53 22V27Z" fill="#e03131" />
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cdb9f5" />
+      <stop offset="1" stop-color="#ffd4ae" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#sky)" />
+  <path d="M19 26H45L42.5 52Q42.2 55 39.2 55H24.8Q21.8 55 21.5 52Z" fill="#2b2d3a" />
+  <circle cx="40.5" cy="55" r="4" fill="#15161d" />
+  <g>
+    <rect x="15" y="17" width="9" height="8" rx="2" fill="#e03131" />
+    <rect x="23.5" y="17" width="9" height="8" fill="#fcc419" />
+    <rect x="32" y="17" width="8.5" height="8" fill="#82c91e" />
+    <rect x="40" y="17" width="9" height="8" rx="2" fill="#9c36b5" />
+  </g>
 </svg>
