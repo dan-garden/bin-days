@@ -1,8 +1,6 @@
-import { LID_PAINT } from '../lib.js';
-
 /**
- * What the secrets play: things that fly, hop or fall over the page, a honk and a toast. All of it
- * runs on a layer that never takes a tap except on the thing to tap, and the movement is left out
+ * What the secrets play besides particles: characters that cross the page, a honk and a toast.
+ * The characters run on a layer that never takes a tap except on the thing to tap, and the movement is left out
  * for people who ask their system for reduced motion.
  */
 
@@ -12,7 +10,6 @@ export interface Point {
 }
 
 export const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-const random = (from: number, to: number) => from + Math.random() * (to - from);
 
 let layer: HTMLElement | undefined;
 function stage() {
@@ -56,45 +53,6 @@ export function sprite(
     );
 }
 
-/** A handful of `pieces` thrown up from a point, which tumble and fade. */
-export function burst(at: Point, pieces: string[], count = 8) {
-  for (let i = 0; i < count; i++) {
-    const [dx, dy] = [random(-130, 130), random(-170, -50)];
-    sprite(
-      pieces[i % pieces.length] ?? '',
-      [
-        { transform: 'translate(-50%, -50%) scale(0.4)' },
-        { transform: `translate(${dx}px, ${dy}px) scale(1)`, offset: 0.45 },
-        { transform: `translate(${dx * 1.3}px, ${dy + 160}px) rotate(${dx}deg)`, opacity: 0 },
-      ],
-      { duration: random(1000, 1500), easing: 'cubic-bezier(.2,.7,.4,1)' },
-      at,
-    );
-  }
-}
-
-/** `count` copies of `html` falling from the top of the screen, spinning as they go. */
-export function rain(html: string, count: number, duration = 3000) {
-  for (let i = 0; i < count; i++) {
-    sprite(
-      html,
-      [
-        { transform: 'translateY(-60px) rotate(0)' },
-        {
-          transform: `translate(${random(-80, 80)}px, ${innerHeight + 60}px) rotate(${random(-540, 540)}deg)`,
-        },
-      ],
-      { duration: random(duration * 0.6, duration), delay: random(0, duration / 3) },
-      { x: random(0, innerWidth), y: 0 },
-    );
-  }
-}
-
-/** Confetti in the lid colours. */
-export function confetti() {
-  for (const colour of Object.values(LID_PAINT)) rain(`<i style="background:${colour}"></i>`, 16);
-}
-
 /** Something that crosses the screen at height `y`, bobbing (or hopping) `bob` pixels as it goes. */
 export function across(
   html: string,
@@ -127,7 +85,7 @@ export function jump(element: Element | null | undefined) {
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 /** A short message at the bottom of the screen, read out by screen readers too. */
-export function toast(title: string, detail: string) {
+export function toast(title: string, detail: string, hunt = false) {
   let note = document.querySelector<HTMLElement>('.secret-toast');
   if (!note) {
     note = document.createElement('div');
@@ -139,6 +97,7 @@ export function toast(title: string, detail: string) {
   heading.textContent = title;
   body.textContent = detail;
   note.replaceChildren(heading, body);
+  note.classList.toggle('hunt', hunt);
   note.classList.add('shown');
   clearTimeout(toastTimer);
   // Long enough to read the fact out to a child.

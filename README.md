@@ -67,7 +67,7 @@ The full reference, with every field and error, is the interactive documentation
 
 ## Where it works
 
-205 councils so far, in every state and the ACT.
+Over 200 councils so far, in every state and the ACT. The site counts them itself, from the council list.
 
 ## Project layout
 
