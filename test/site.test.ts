@@ -274,6 +274,18 @@ describe('files for crawlers and language models', () => {
     expect((await get('/robots.txt')).body).toContain('Sitemap: https://binday.test/sitemap.xml');
   });
 
+  it('gives each written page its own share image and article details', async () => {
+    const { body } = await get('/guides/kids/which-bin');
+    expect(body).toContain(
+      '<meta property="og:image" content="https://binday.test/covers/guides-kids-which-bin.png" />',
+    );
+    expect(body).toContain('<meta property="article:section" content="For kids" />');
+    expect(body).toMatch(/"image":"https:\/\/binday\.test\/covers\/guides-kids-which-bin\.png"/);
+    expect(body).toContain('"suggestedMinAge":6');
+    // Pages without their own keep the site's.
+    expect((await get('/')).body).toContain('content="https://binday.test/og-image.png"');
+  });
+
   it('publishes the bin data as a page with charts, a dataset and a CSV', async () => {
     const page = await get('/data/bin-collections');
     expect(page.response.status).toBe(200);

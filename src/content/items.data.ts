@@ -409,7 +409,7 @@ export const ITEM_DATA = [
   },
   {
     slug: 'broken-glass-and-ceramics',
-    name: 'Broken glass, ceramics and drinking glasses',
+    name: 'Broken glass and ceramics (including drinking glasses)',
     bin: 'general',
     answer:
       'Drinking glasses, broken glass, crockery, Pyrex and ceramics go in the general waste bin, not the recycling or glass bin. They are made differently from bottle and jar glass and cannot be recycled with it.',
@@ -535,7 +535,7 @@ export const ITEM_DATA = [
   },
   {
     slug: 'compostable-plastics',
-    name: 'Compostable and biodegradable plastics',
+    name: 'Compostable plastics (including biodegradable plastics)',
     bin: 'general',
     answer:
       'Compostable and biodegradable plastic bags, cups and packaging go in the general waste bin in most areas. They do not go in the recycling bin.',
@@ -593,7 +593,7 @@ export const ITEM_DATA = [
   },
   {
     slug: 'container-deposit-scheme',
-    name: 'Drink containers with a refund',
+    name: 'Refundable drink containers',
     bin: 'recycling',
     answer:
       'Most drink cans, bottles and small cartons between 150 mL and 3 litres earn a 10c refund when you return them to a refund point. If you do not return them, they go in your recycling bin.',

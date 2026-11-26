@@ -1,4 +1,5 @@
 import type { Article } from './articles.js';
+import { binRow } from './illustrations.js';
 import { ITEM_DATA } from './items.data.js';
 import { escapeHtml, markdownToHtml } from './markdown.js';
 
@@ -40,10 +41,13 @@ const BINS: Record<ItemBin, { name: string; lid: string; colour: string }> = {
 export const itemPath = (item: Pick<Item, 'slug'>) => `${ITEMS_PATH}/${item.slug}`;
 
 /** "Which bin do pizza boxes go in?" */
-export function itemQuestion(item: Item) {
-  const plural = /s$/.test(item.name) && !/ss$/.test(item.name);
+export function itemQuestion(item: Item, short = false) {
+  // "Soft plastics (plastic bags and wrappers)" is plural by its first words.
+  const bare = item.name.replace(/\s*\(.*\)$/, '');
+  const plural = /s$/.test(bare) && !/ss$/.test(bare);
   // Only the first letter drops to lower case, so "TVs" stays as it is.
-  const name = item.name.charAt(0).toLowerCase() + item.name.slice(1);
+  const named = short ? bare : item.name;
+  const name = named.charAt(0).toLowerCase() + named.slice(1);
   return `Which bin ${plural ? 'do' : 'does'} ${name} go in?`;
 }
 
@@ -74,10 +78,22 @@ export function itemArticle(item: Item): Article {
   return {
     path: itemPath(item),
     title: itemQuestion(item),
-    seoTitle: `${itemQuestion(item)} | Bin Days`,
-    description: item.answer,
+    seoTitle: `${itemQuestion(item, true)} | Bin Days`,
+    // Search results show about 160 characters, so a long answer gives its first sentence.
+    description:
+      item.answer.length > 160
+        ? (item.answer.match(/^.+?\.(?=\s|$)/)?.[0] ?? item.answer)
+        : item.answer,
     updated: CHECKED,
-    parent: { name: 'Which bin?', path: ITEMS_PATH },
+    parents: [
+      { name: 'Guides', path: '/guides' },
+      { name: 'Which bin?', path: ITEMS_PATH },
+    ],
+    related: [
+      '/guides/kids/which-bin',
+      '/guides/bin-lid-colours',
+      ...(item.bin === 'organics' || item.bin === 'glass' ? ['/guides/fogo-and-glass-bins'] : []),
+    ],
     html: card(item) + markdownToHtml(body.join('\n\n')),
     schema: () => [
       {
@@ -103,11 +119,28 @@ const ORDER: ItemBin[] = ['recycling', 'organics', 'general', 'glass', 'none'];
 export const itemsIndex: Article = {
   path: ITEMS_PATH,
   title: 'Which bin does it go in?',
-  seoTitle: 'Which bin does it go in? Recycling, organics or general waste | Bin Days',
+  seoTitle: 'Which bin does it go in? Household items A to Z | Bin Days',
   description:
     'Pizza boxes, batteries, soft plastics, coffee cups and more: which household bin each one goes in in Australia, or where to take it instead.',
   updated: CHECKED,
-  body: `These are the usual answers across Australia, each checked against government and recycling sources. Councils differ, so where an answer depends on yours, the page says so. [Look up your address](/) to see the bins you have.
+  parents: [{ name: 'Guides', path: '/guides' }],
+  related: [
+    '/guides/kids/which-bin',
+    '/guides/bin-lid-colours',
+    '/guides/fogo-and-glass-bins',
+    '/data/bin-collections',
+  ],
+  html: [
+    binRow(
+      [
+        ['red', 'General waste'],
+        ['yellow', 'Recycling'],
+        ['lime', 'Organics'],
+        ['purple', 'Glass'],
+      ],
+      'The usual Australian bin lids. Not every home has all four.',
+    ),
+    markdownToHtml(`These are the usual answers across Australia, each checked against government and recycling sources. Councils differ, so where an answer depends on yours, the page says so. [Look up your address](/) to see the bins you have, or, with the kids, try [Which bin? A guide for kids](/guides/kids/which-bin).
 
 ${ORDER.filter((bin) => ITEMS.some((item) => item.bin === bin))
   .map(
@@ -116,7 +149,8 @@ ${ORDER.filter((bin) => ITEMS.some((item) => item.bin === bin))
         .map((item) => `- [${item.name}](${itemPath(item)})`)
         .join('\n')}`,
   )
-  .join('\n\n')}`,
+  .join('\n\n')}`),
+  ].join('\n'),
 };
 
 export const ITEM_ARTICLES = ITEMS.map(itemArticle);

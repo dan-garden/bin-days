@@ -20,6 +20,7 @@
     "build:registry": "tsx scripts/build-registry.ts",
     "build:suburbs": "tsx scripts/build-suburbs.ts",
     "build:bins": "tsx scripts/build-council-bins.ts",
+    "build:covers": "tsx scripts/build-covers.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p web",
     "lint": "biome check .",
     "format": "biome check --write .",

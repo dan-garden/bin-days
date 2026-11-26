@@ -39,6 +39,7 @@ const SITE_LINKS = [
   ['/guides', 'Guides'],
   ['/which-bin', 'Which bin?'],
   ['/data/bin-collections', 'Data'],
+  ['/docs', 'API'],
   ['/about', 'About'],
   ['/privacy', 'Privacy'],
   ['/contact', 'Contact'],
@@ -176,8 +177,11 @@ export function App() {
           </Group>
         </Anchor>
         <Group gap="md">
-          <Anchor href="/guides" c="inherit" size="sm" underline="hover" visibleFrom="xs">
+          <Anchor href="/guides" c="inherit" size="sm" underline="hover">
             Guides
+          </Anchor>
+          <Anchor href="/which-bin" c="inherit" size="sm" underline="hover" visibleFrom="sm">
+            Which bin?
           </Anchor>
           <Anchor
             href={isHome ? '#coverage' : '/#coverage'}
@@ -187,7 +191,8 @@ export function App() {
           >
             Councils
           </Anchor>
-          <Outbound href="/docs" c="inherit" size="sm" underline="hover">
+          {/* On a phone, the guides matter more than the API; the footer links both. */}
+          <Outbound href="/docs" c="inherit" size="sm" underline="hover" visibleFrom="xs">
             API
           </Outbound>
           <Outbound href={REPO} c="inherit" aria-label="Source code on GitHub" lh={0}>

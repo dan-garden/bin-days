@@ -3,10 +3,11 @@ import type { Article } from '../articles.js';
 export const thisWeek: Article = {
   path: '/guides/what-bins-go-out-this-week',
   title: 'Which bins go out this week?',
-  seoTitle: 'What bins go out this week? How to tell, for any address | Bin Days',
+  seoTitle: 'What bins go out this week? How to tell | Bin Days',
   description:
     'Why the bins change from week to week, how to tell which ones go out this week at your place, and how to never have to check again.',
   updated: '2026-11-25',
+  related: ['/which-bin', '/data/bin-collections'],
   body: `
 The quickest answer: [type your address](/) and Bin Days shows which bins go out this week, on which day, and the weeks after.
 

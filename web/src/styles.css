@@ -837,6 +837,179 @@ body::before {
   color: var(--mantine-color-dimmed);
 }
 
+/* Drawings in the kids' guides (src/content/illustrations.ts), framed like a picture book page. */
+.illustration,
+.journey,
+.yes-no {
+  margin: 1.25rem 0 1.75rem;
+  padding: 1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+}
+
+.illustration svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 16rem;
+  fill: currentColor;
+  font: 700 13px var(--mantine-font-family);
+}
+
+.illustration text {
+  fill: currentColor;
+}
+
+.prose .hierarchy ol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* White on these darker greens and oranges keeps at least 4.5:1 contrast. */
+.prose .hierarchy li {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.6rem;
+  color: #fff;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.hierarchy span {
+  font-size: 0.8rem;
+  opacity: 0.92;
+}
+
+.illustration figcaption,
+.journey figcaption,
+.yes-no figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--mantine-color-dimmed);
+}
+
+.prose .journey ol,
+.prose .yes-no ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prose .journey li {
+  position: relative;
+  flex: 1 1 7rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+/* An arrow to the next stop: across on a wide screen, down on a phone. */
+.prose .journey li + li::before {
+  content: "→";
+  position: absolute;
+  top: 1rem;
+  left: -0.75rem;
+  font-weight: 800;
+  color: var(--mantine-color-dimmed);
+}
+
+.journey-note {
+  color: var(--mantine-color-dimmed);
+}
+
+@media (max-width: 30em) {
+  .prose .journey ol {
+    flex-direction: column;
+  }
+
+  .prose .journey li + li::before {
+    content: "↓";
+    position: static;
+  }
+}
+
+.prose .yes-no li {
+  flex: 1 1 8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.prose .tip-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.prose .tip-cards li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.tip-cards span {
+  font-size: 0.9rem;
+  color: var(--mantine-color-dimmed);
+}
+
+.quiz b {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--mantine-primary-color-filled);
+}
+
+.prose .quiz li {
+  background: color-mix(in srgb, var(--mantine-color-text) 5%, transparent);
+}
+
+.yes-no li.yes {
+  background: color-mix(in srgb, #37b24d 14%, transparent);
+}
+
+.yes-no li.no {
+  background: color-mix(in srgb, #e03131 12%, transparent);
+}
+
 /* Charts, tables and headline numbers on the written pages (src/content/charts.ts). */
 .stat-tiles {
   display: grid;
