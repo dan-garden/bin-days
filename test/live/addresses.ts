@@ -234,6 +234,18 @@ export const ADDRESSES: Record<string, string[]> = {
   'wa/cockburn': ['9 Coleville Crescent, Spearwood WA 6163'],
   'wa/vincent': ['313 Vincent Street, Leederville WA 6007'],
   'wa/armadale': ['7 Orchard Avenue, Armadale WA 6112'],
+  'vic/campaspe': ['10 Hare Street, Echuca VIC 3564'],
+  'nsw/broken-hill': ['10 King Street, Broken Hill NSW 2880'],
+  'nsw/murray-river': ['10 Kingfisher Drive, Moama NSW 2731'],
+  'nsw/narrandera': ['1 Victoria Square, Narrandera NSW 2700'],
+  'vic/bass-coast': ['10 Moonah Way, Inverloch VIC 3996'],
+  'nsw/nambucca-valley': ['1 Princess Street, Macksville NSW 2447'],
+  'nsw/narrabri': ['46 Maitland Street, Narrabri NSW 2390'],
+  'vic/latrobe': ['141 Commercial Road, Morwell VIC 3840'],
+  'vic/mitchell': ['113 High Street, Broadford VIC 3658'],
+  'nsw/byron': ['70 Station Street, Mullumbimby NSW 2482'],
+  'wa/albany': ['24 Bohemia Road, Yakamia WA 6330'],
+  'qld/toowoomba': ['112 Campbell Street, Toowoomba QLD 4350'],
 };
 
 /**

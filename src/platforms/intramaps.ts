@@ -121,7 +121,12 @@ export async function readIntraMapsPanel(
   );
   const forms = (setup.forms ?? []) as Array<Record<string, string>>;
   const fullText = forms.filter((form) => form.subType?.toLowerCase() === 'fulltext');
-  const form = fullText.find((f) => f.name?.toLowerCase() === 'address') ?? fullText[0];
+  // Most projects search addresses as free text. Some (Campaspe) only have a form named Address
+  // that looks the property up directly.
+  const form =
+    fullText.find((f) => f.name?.toLowerCase() === 'address') ??
+    fullText[0] ??
+    forms.find((f) => f.name?.toLowerCase() === 'address');
   if (!form?.templateId) throw parseError('IntraMaps has no address search form', { url: app });
 
   const found = await json(
@@ -140,7 +145,15 @@ export async function readIntraMapsPanel(
       { fields: [search] },
     ),
   );
-  const results = (found.fullText ?? []) as Array<Record<string, unknown>>;
+  // A direct lookup answers with the first property's panel straight away.
+  if (!Array.isArray(found.fullText)) {
+    const fields = panelFields(found);
+    const shown = fields.Address ?? search;
+    return Object.keys(fields).length && isMatch(shown)
+      ? { address: shown, fields, candidates: [shown] }
+      : undefined;
+  }
+  const results = found.fullText as Array<Record<string, unknown>>;
   const candidates = results.map((result) => pick(result, 'displayValue') ?? '');
   const chosen = results.find((result) => isMatch(pick(result, 'displayValue') ?? ''));
   const dbKey = chosen && pick(chosen, 'dbKey');
@@ -160,7 +173,16 @@ export async function readIntraMapsPanel(
       },
     ),
   );
-  const panels = (selected.infoPanels ?? {}) as Record<
+  return {
+    address: pick(chosen, 'displayValue') ?? search,
+    fields: panelFields(selected),
+    candidates,
+  };
+}
+
+/** Every field of the property panels in an answer, as `name -> text`. */
+function panelFields(answer: Record<string, unknown>): Record<string, string> {
+  const panels = (answer.infoPanels ?? {}) as Record<
     string,
     { feature?: { fields?: unknown[] } } | null
   >;
@@ -174,7 +196,7 @@ export async function readIntraMapsPanel(
       if (name && typeof text === 'string') fields[name] ??= stripTags(text);
     }
   }
-  return { address: pick(chosen, 'displayValue') ?? search, fields, candidates };
+  return fields;
 }
 
 const stripTags = (html: string) =>

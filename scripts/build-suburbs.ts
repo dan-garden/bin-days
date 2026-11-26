@@ -92,11 +92,23 @@ const within = ([west, south, east, north]: Bounds, longitude: number, latitude:
 type Row = [name: string, latitude: number, longitude: number, postcode?: string];
 const suburbs: Record<string, Row[]> = {};
 
-for (const { attributes, geometry } of await readLayer('SAL', [
-  'sal_code_2021',
-  'sal_name_2021',
-  'state_code_2021',
-])) {
+/** List a suburb under a council, at a point, with the postcode that point is in. */
+function addSuburb(council: string, suburbName: string, [longitude, latitude]: [number, number]) {
+  // A suburb can span several postcodes; this is the one its middle is in.
+  const postcode = postcodes.find(
+    (area) => within(area.bounds, longitude, latitude) && encloses(area.rings, longitude, latitude),
+  )?.code;
+  // The ABS adds the state to names that occur in several, e.g. "Richmond (Vic.)".
+  const name = suburbName.replace(/\s*\(.*\)$/, '');
+  suburbs[council] ??= [];
+  const list = suburbs[council];
+  if (list.some(([existing]) => existing === name)) return;
+  const [lat, lon] = [Number(latitude.toFixed(4)), Number(longitude.toFixed(4))];
+  list.push(postcode ? [name, lat, lon, postcode] : [name, lat, lon]);
+}
+
+const localities = await readLayer('SAL', ['sal_code_2021', 'sal_name_2021', 'state_code_2021']);
+for (const { attributes, geometry } of localities) {
   const state = STATES[Number(attributes.state_code_2021) - 1];
   const point = middle(geometry?.rings);
   if (!state || !AUSTRALIAN_STATES.includes(state) || !point) continue;
@@ -108,20 +120,20 @@ for (const { attributes, geometry } of await readLayer('SAL', [
       area.properties.state === state &&
       areaContains(area.geometry as Area, { latitude, longitude }),
   );
-  if (!council) continue;
-  // A suburb can span several postcodes; this is the one its middle is in.
-  const postcode = postcodes.find(
-    (area) => within(area.bounds, longitude, latitude) && encloses(area.rings, longitude, latitude),
-  )?.code;
-  // The ABS adds the state to names that occur in several, e.g. "Richmond (Vic.)".
-  const name = (attributes.sal_name_2021 ?? '').replace(/\s*\(.*\)$/, '');
-  const id = council.properties.council;
-  suburbs[id] ??= [];
-  const list = suburbs[id];
-  if (!list.some(([existing]) => existing === name)) {
-    const [lat, lon] = [Number(latitude.toFixed(4)), Number(longitude.toFixed(4))];
-    list.push(postcode ? [name, lat, lon, postcode] : [name, lat, lon]);
-  }
+  if (council) addSuburb(council.properties.council, attributes.sal_name_2021 ?? '', point);
+}
+
+// A small council inside a much bigger locality (Broken Hill, Queenscliffe) holds none of its
+// suburbs' middles. It gets the suburb its own middle is in, placed at its own middle.
+for (const area of coverage.features) {
+  const { council } = area.properties;
+  if (suburbs[council]) continue;
+  const geometry = area.geometry as Area;
+  const point = middle(
+    geometry.type === 'Polygon' ? geometry.coordinates : geometry.coordinates.flat(),
+  );
+  const locality = point && localities.find((l) => encloses(l.geometry?.rings ?? [], ...point));
+  if (point && locality) addSuburb(council, locality.attributes.sal_name_2021 ?? '', point);
 }
 
 const sorted = Object.fromEntries(

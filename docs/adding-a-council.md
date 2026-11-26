@@ -66,9 +66,9 @@ If you find a platform that several councils share, put it in `src/platforms/` s
 
 ## 4. Register it
 
-Add it to the list in `src/councils/index.ts`. Its landing page and sitemap entry appear automatically.
+Run `npm run build:registry`, which lists every council file in `src/councils/all.generated.ts`. Its landing page and sitemap entry then appear automatically. (`npm test` fails if a council file isn't listed, or has no sample address.)
 
-Then, once its live test address is in place (step 5), run `npm run build:suburbs` and `npm run build:bins`. The first lists the suburbs and postcodes in every supported council's area (from Australian Bureau of Statistics boundaries), so the new council gets its suburb pages. The second looks up each council's sample address and records its bins, which its pages list. It takes several minutes.
+Then, once its live test address is in place (step 5), run `npm run build:suburbs` and `npm run build:bins`. The first lists the suburbs and postcodes in every supported council's area (from Australian Bureau of Statistics boundaries), so the new council gets its suburb pages. The second looks up each council's sample address and records its bins, which its pages list; name the new council (`npm run build:bins -- nsw/example`) to look up only that one rather than every council, which takes several minutes.
 
 ## 5. Test it
 

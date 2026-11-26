@@ -17,6 +17,7 @@
     "start": "node dist/server.js",
     "build": "tsc -p tsconfig.build.json",
     "build:web": "vite build",
+    "build:registry": "tsx scripts/build-registry.ts",
     "build:suburbs": "tsx scripts/build-suburbs.ts",
     "build:bins": "tsx scripts/build-council-bins.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p web",

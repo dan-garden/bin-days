@@ -30,6 +30,8 @@ export interface ZoneBin {
   /** The cycle in days, or the field that holds it in weeks. */
   everyDays?: number;
   weeksField?: string;
+  /** Only in zones whose fields have these values, e.g. `{ CLASS: 'Urban' }`. */
+  onlyWhere?: Record<string, string>;
 }
 
 /**
@@ -94,6 +96,10 @@ export function zoneServices(
 ): BinService[] {
   const services: BinService[] = [];
   for (const bin of bins) {
+    const applies = Object.entries(bin.onlyWhere ?? {}).every(
+      ([field, value]) => String(read(zone, field)) === value,
+    );
+    if (!applies) continue;
     const anchor = anchorOf(bin, zone, today, weekField);
     if (!anchor) continue;
     const weeks = Number(

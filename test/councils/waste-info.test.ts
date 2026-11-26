@@ -118,6 +118,18 @@ describe('waste-info adapter (Redland)', () => {
     expect((await lookup('4 Abelia Street Alexandra Hills', http)).propertyId).toBe('11');
   });
 
+  it('uses a whole-street entry for any house on that street', async () => {
+    // Shapes as narrabri.waste-info.com.au returned them on 2026-11-26.
+    const http = fakeHttp((url) => {
+      if (url.pathname === '/api/v1/streets.json') return json({ streets });
+      if (url.pathname === '/api/v1/properties.json') {
+        return json({ properties: [{ id: 20, name: 'Abelia St Alexandra Hills' }] });
+      }
+      if (url.pathname.startsWith('/api/v1/properties/')) return json(events);
+    });
+    expect((await lookup('46 Abelia Street, Alexandra Hills', http)).propertyId).toBe('20');
+  });
+
   it("suggests the street's properties when the number is wrong", async () => {
     await expect(lookup('99 Abelia Street Alexandra Hills')).rejects.toMatchObject({
       code: 'ADDRESS_NOT_FOUND',

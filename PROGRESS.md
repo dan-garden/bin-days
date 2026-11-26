@@ -4,27 +4,27 @@ What Bin Days covers today, and what is next.
 
 The live list is always at [`/v1/councils`](https://bindays.au/v1/councils), or run `npm run cli -- --list`.
 
-## Supported councils (205)
+## Supported councils (217)
 
 ### South Australia (52)
 
 Adelaide, Adelaide Hills, Adelaide Plains, Alexandrina, Barunga West, Berri Barmera, Burnside, Campbelltown, Charles Sturt, Clare and Gilbert Valleys, Cleve, Coorong, Copper Coast, Elliston, The Flinders Ranges, Gawler, Goyder, Kangaroo Island, Kingston, Light, Lower Eyre, Marion, Mid Murray, Mitcham, Mount Barker, Mount Gambier, Mount Remarkable, Murray Bridge, Naracoorte Lucindale, Northern Areas, Norwood Payneham and St Peters, Onkaparinga, Playford, Port Adelaide Enfield, Port Augusta, Port Lincoln, Port Pirie, Prospect, Renmark Paringa, Robe, Salisbury, Southern Mallee, Streaky Bay, Tea Tree Gully, Tumby Bay, Unley, Wakefield, Walkerville, West Torrens, Whyalla, Yankalilla, Yorke Peninsula
 
-### New South Wales (53)
+### New South Wales (59)
 
-Armidale, Ballina, Bathurst, Bayside, Bega Valley, Bellingen, Blacktown, Blue Mountains, Burwood, Campbelltown, Canada Bay, Canterbury Bankstown, Central Coast, Cessnock, Clarence Valley, Coffs Harbour, Cowra, Cumberland, Forbes, Gwydir, The Hills, Hornsby, Hunter's Hill, Inner West, Kempsey, Kiama, Ku-ring-gai, Lake Macquarie, Lane Cove, Leeton, Lismore, Lithgow, Liverpool, MidCoast, Moree Plains, Mosman, Newcastle, Northern Beaches, Penrith, Port Macquarie-Hastings, Port Stephens, Queanbeyan-Palerang, Ryde, Shoalhaven, Snowy Valleys, Strathfield, Sydney, Tweed, Upper Hunter, Willoughby, Wollondilly, Wollongong, Woollahra
+Armidale, Ballina, Bathurst, Bayside, Bega Valley, Bellingen, Blacktown, Blue Mountains, Broken Hill, Burwood, Byron, Campbelltown, Canada Bay, Canterbury Bankstown, Central Coast, Cessnock, Clarence Valley, Coffs Harbour, Cowra, Cumberland, Forbes, Gwydir, The Hills, Hornsby, Hunter's Hill, Inner West, Kempsey, Kiama, Ku-ring-gai, Lake Macquarie, Lane Cove, Leeton, Lismore, Lithgow, Liverpool, MidCoast, Moree Plains, Mosman, Murray River, Nambucca Valley, Narrabri, Narrandera, Newcastle, Northern Beaches, Penrith, Port Macquarie-Hastings, Port Stephens, Queanbeyan-Palerang, Ryde, Shoalhaven, Snowy Valleys, Strathfield, Sydney, Tweed, Upper Hunter, Willoughby, Wollondilly, Wollongong, Woollahra
 
-### Victoria (59)
+### Victoria (63)
 
-Alpine, Ballarat, Banyule, Baw Baw, Bayside, Benalla, Boroondara, Cardinia, Casey, Central Goldfields, Colac Otway, Corangamite, Darebin, Frankston, Gannawarra, Glen Eira, Glenelg, Greater Bendigo, Greater Geelong, Hindmarsh, Hobsons Bay, Horsham, Hume, Kingston, Knox, Loddon, Macedon Ranges, Mansfield, Maribyrnong, Maroondah, Melbourne, Melton, Merri-bek, Mildura, Moira, Monash, Moonee Valley, Moorabool, Mornington Peninsula, Mount Alexander, Moyne, Murrindindi, Nillumbik, Northern Grampians, Port Phillip, Pyrenees, Queenscliffe, Southern Grampians, Stonnington, Strathbogie, Surf Coast, Swan Hill, Wangaratta, Wellington, Whitehorse, Whittlesea, Yarra, Yarra Ranges, Yarriambiack
+Alpine, Ballarat, Banyule, Bass Coast, Baw Baw, Bayside, Benalla, Boroondara, Campaspe, Cardinia, Casey, Central Goldfields, Colac Otway, Corangamite, Darebin, Frankston, Gannawarra, Glen Eira, Glenelg, Greater Bendigo, Greater Geelong, Hindmarsh, Hobsons Bay, Horsham, Hume, Kingston, Knox, Latrobe, Loddon, Macedon Ranges, Mansfield, Maribyrnong, Maroondah, Melbourne, Melton, Merri-bek, Mildura, Mitchell, Moira, Monash, Moonee Valley, Moorabool, Mornington Peninsula, Mount Alexander, Moyne, Murrindindi, Nillumbik, Northern Grampians, Port Phillip, Pyrenees, Queenscliffe, Southern Grampians, Stonnington, Strathbogie, Surf Coast, Swan Hill, Wangaratta, Wellington, Whitehorse, Whittlesea, Yarra, Yarra Ranges, Yarriambiack
 
-### Queensland (16)
+### Queensland (17)
 
-Brisbane, Bundaberg, Cassowary Coast, Fraser Coast, Gladstone, Gold Coast, Gympie, Hinchinbrook, Livingstone, Logan, Mackay, Moreton Bay, Redland, Scenic Rim, South Burnett, Sunshine Coast
+Brisbane, Bundaberg, Cassowary Coast, Fraser Coast, Gladstone, Gold Coast, Gympie, Hinchinbrook, Livingstone, Logan, Mackay, Moreton Bay, Redland, Scenic Rim, South Burnett, Sunshine Coast, Toowoomba
 
-### Western Australia (20)
+### Western Australia (21)
 
-Armadale, Bassendean, Bayswater, Belmont, Bunbury, Cambridge, Canning, Cockburn, Gosnells, Joondalup, Kalamunda, Kwinana, Mandurah, Murray, Rockingham, Serpentine Jarrahdale, South Perth, Stirling, Swan, Vincent
+Albany, Armadale, Bassendean, Bayswater, Belmont, Bunbury, Cambridge, Canning, Cockburn, Gosnells, Joondalup, Kalamunda, Kwinana, Mandurah, Murray, Rockingham, Serpentine Jarrahdale, South Perth, Stirling, Swan, Vincent
 
 ### Tasmania (4)
 
@@ -38,13 +38,13 @@ Canberra
 
 | Source                                                    | Councils |
 | --------------------------------------------------------- | -------- |
-| Council websites on the OpenCities platform               | 60       |
+| Council websites on the OpenCities platform               | 64       |
 | South Australia's My Local Services (state service)       | 49       |
-| waste-info.com.au calendars                               | 38       |
-| Councils' own lookups (Casey, Sydney, Geelong, others)    | 25       |
-| IntraMaps property maps                                   | 12       |
-| Zone files councils publish (Bendigo, Frankston, others)  | 9        |
-| Councils' map layers (Launceston, Newcastle, others)      | 8        |
+| waste-info.com.au calendars                               | 40       |
+| Councils' own lookups (Casey, Sydney, Geelong, others)    | 26       |
+| IntraMaps property maps                                   | 13       |
+| Zone files councils publish (Bendigo, Frankston, others)  | 11       |
+| Councils' map layers (Launceston, Newcastle, others)      | 10       |
 | Open datasets (Brisbane, Melbourne, Liverpool, ACT)       | 4        |
 
 ## Next
@@ -52,7 +52,7 @@ Canberra
 Tracked as [issues on GitHub](https://github.com/dan-garden/bin-days/issues). The ones in progress or next up:
 
 - [ ] **Weekly check that every council's source still works** ([#15](https://github.com/dan-garden/bin-days/issues/15)). For now, run `npm run check:sources` by hand every Monday ([how](docs/deploying.md#checking-the-councils-every-week)); a schedule can come later.
-- [ ] **Councils still to add** ([#11](https://github.com/dan-garden/bin-days/issues/11)). Campaspe, Albany and Byron have a usable source; the rest refuse our requests, need an access key, or publish only a calendar. The issue has the reason for each.
+- [ ] **Councils still to add** ([#11](https://github.com/dan-garden/bin-days/issues/11)). 217 of Australia's 539 council areas are covered. The issue lists, for the rest, why each isn't: most small councils publish only a calendar, and some refuse our requests or need an access key.
 - [ ] **Reminders that work in every calendar app** ([#6](https://github.com/dan-garden/bin-days/issues/6)). The calendar feed carries one, but Google ignores it and Apple removes it by default.
 - [ ] **Two South Australian councils** are in the state service but did not pass an end-to-end check: Ceduna and Karoonda East Murray.
 
@@ -73,6 +73,10 @@ Done recently: a calendar feed for any address (`/v1/calendar.ics`), a page for 
 - **Strathbogie publishes a new zone dataset each July,** so its address needs updating then.
 - **Armadale says only "this week" or "next week" for recycling.** That is read as Monday to Sunday; a lookup made on a Sunday may be a week out.
 - **Mosman, Canning and Southern Grampians (organics) only give the next date** for some bins.
+- **Byron's fortnights come from the council's 2026-27 printed calendars,** and its road map was last edited in 2021. Check again when the 2027-28 calendars come out.
+- **Albany's FOGO bin goes weekly in summer** (21 December 2026 to 12 February 2027, from its calendar). Each year's summer needs adding to `src/councils/wa/albany.ts`.
+- **Latrobe and Mitchell are read from their community maps,** because their own websites refuse our requests, so the dates couldn't be checked against their calendars.
+- **Toowoomba's form only says this week's bins,** so a green waste bin shows only in weeks it goes out. Campaspe's map gives next dates only.
 - **Alpine and Mansfield's cycles come from the councils' waste pages,** not from the lookup, which gives only the next date.
 - **Northern Beaches' fortnights were read from the council's 2026 calendars.** They need checking again when the 2027 calendars come out.
 - **Sunshine Coast is matched by street, not by house,** because that is all the council's own page uses.
