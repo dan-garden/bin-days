@@ -92,6 +92,8 @@ export function toast(title: string, detail: string, hunt = false) {
     note.className = 'secret-toast';
     note.setAttribute('role', 'status');
     document.body.append(note);
+    // Lay it out hidden first, so its first showing slides in too.
+    note.getBoundingClientRect();
   }
   const [heading, body] = [document.createElement('strong'), document.createElement('span')];
   heading.textContent = title;

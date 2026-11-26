@@ -1,6 +1,7 @@
 import { Sparkles } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
+import type { Group } from 'three';
 import type { Bin as ApiBin } from '../../api.js';
 import { lidPaint } from '../../lib.js';
 import {
@@ -69,16 +70,19 @@ const still =
 export const CAPTION_BESIDE = 1200;
 
 /**
- * Frames the street. On a narrow screen the camera steps back so the whole scene still fits. Where
+ * Frames the street. On a narrow screen the camera moves in on the truck and the bins. Where
  * the answer card sits over the street, the picture slides right so the bins and the truck stand
  * clear of the card (see `.street-caption`'s left edge). The truck stops about 440px left of the bins.
  */
 function Camera() {
   const { camera, size } = useThree();
   useEffect(() => {
-    const far = size.width < 640 ? 1.7 : 1;
-    camera.position.set(6.5 * far, 5.2 * far, 9.5 * far);
-    camera.lookAt(0, 0.6, 0);
+    // A phone shows the truck and the bins up close, letting the far houses fall off the right.
+    const narrow = size.width < 640;
+    const far = narrow ? 1.2 : 1;
+    const x = narrow ? -1.6 : 0;
+    camera.position.set(x + 6.5 * far, 5.2 * far, 9.5 * far);
+    camera.lookAt(x, 0.6, 0);
     if (size.width >= CAPTION_BESIDE && 'setViewOffset' in camera) {
       const cardRight = Math.max(20, size.width / 2 - 640) + 384;
       const bins = cardRight + 480;
@@ -95,6 +99,21 @@ function Camera() {
     }
   }, [camera, size.width, size.height]);
   return null;
+}
+
+/** As the page scrolls past, the street turns a little, as if walking by it. */
+function Swing({ children }: { children: React.ReactNode }) {
+  const group = useRef<Group>(null);
+  const canvas = useThree((state) => state.gl.domElement);
+  useFrame(() => {
+    if (!group.current || still) return;
+    const box = canvas.getBoundingClientRect();
+    // -0.5 as the street comes up from the bottom of the screen, 0.5 as it leaves the top.
+    const through =
+      Math.min(1, Math.max(0, (innerHeight - box.top) / (innerHeight + box.height))) - 0.5;
+    group.current.rotation.y += (through * 0.4 - group.current.rotation.y) * 0.1;
+  });
+  return <group ref={group}>{children}</group>;
 }
 
 /** Restarts the story when `play` changes, and sparkles at the kerb once the truck arrives. */
@@ -174,26 +193,28 @@ export default function StreetScene({ bins, play, night }: StreetSceneProps) {
             intensity={night ? 0.3 : 0.6}
             color={night ? '#6f7cc8' : '#c9b6f2'}
           />
-          <Story play={play}>
-            <Ground palette={palette} />
-            {palette.walls.map((wall, i) => (
-              <House key={wall} x={(i - 1) * 4.2} wall={wall} palette={palette} />
-            ))}
-            <Tree x={-6.6} z={-1.2} scale={1.2} leaves={palette.leaves} />
-            <Tree x={2.2} z={-1.6} leaves={palette.leaves} />
-            <Tree x={6.7} z={-1} scale={1.1} leaves={palette.leaves} />
-            {shown.map((bin, i) => (
-              <Bin
-                key={bin.name}
-                x={(i - (shown.length - 1) / 2) * spacing}
-                lid={lidPaint(bin)}
-                due={bin.due}
-                delay={0.2 + i * 0.15}
-                still={still}
-              />
-            ))}
-            <Truck still={still} night={night} />
-          </Story>
+          <Swing>
+            <Story play={play}>
+              <Ground palette={palette} />
+              {palette.walls.map((wall, i) => (
+                <House key={wall} x={(i - 1) * 4.2} wall={wall} palette={palette} />
+              ))}
+              <Tree x={-6.6} z={-1.2} scale={1.2} leaves={palette.leaves} />
+              <Tree x={2.2} z={-1.6} leaves={palette.leaves} />
+              <Tree x={6.7} z={-1} scale={1.1} leaves={palette.leaves} />
+              {shown.map((bin, i) => (
+                <Bin
+                  key={bin.name}
+                  x={(i - (shown.length - 1) / 2) * spacing}
+                  lid={lidPaint(bin)}
+                  due={bin.due}
+                  delay={0.2 + i * 0.15}
+                  still={still}
+                />
+              ))}
+              <Truck still={still} night={night} />
+            </Story>
+          </Swing>
           <Sparkles
             count={night ? 120 : 60}
             scale={[18, night ? 8 : 4, 8]}
