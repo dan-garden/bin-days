@@ -51,7 +51,7 @@ Canberra
 
 Tracked as [issues on GitHub](https://github.com/dan-garden/bin-days/issues). The ones in progress or next up:
 
-- [ ] **Weekly check that every council's source still works** ([#15](https://github.com/dan-garden/bin-days/issues/15)).
+- [ ] **Weekly check that every council's source still works** ([#15](https://github.com/dan-garden/bin-days/issues/15)). For now, run `npm run check:sources` by hand every Monday ([how](docs/deploying.md#checking-the-councils-every-week)); a schedule can come later.
 - [ ] **Councils still to add** ([#11](https://github.com/dan-garden/bin-days/issues/11)). Campaspe, Albany and Byron have a usable source; the rest refuse our requests, need an access key, or publish only a calendar. The issue has the reason for each.
 - [ ] **Reminders that work in every calendar app** ([#6](https://github.com/dan-garden/bin-days/issues/6)). The calendar feed carries one, but Google ignores it and Apple removes it by default.
 - [ ] **Two South Australian councils** are in the state service but did not pass an end-to-end check: Ceduna and Karoonda East Murray.

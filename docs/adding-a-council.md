@@ -72,6 +72,6 @@ Then, once its live test address is in place (step 5), run `npm run build:suburb
 
 ## 5. Test it
 
-- Add one real address for the council to `test/live/councils.test.ts`, then run `npm run test:live`. Prefer a public building over someone's home.
+- Add one real address for the council to `test/live/addresses.ts`, then run `npm run check:sources -- <council id>`. Prefer a public building over someone's home.
 - For a new platform or a hand-written adapter, add a unit test with a saved response in `test/fixtures/`.
 - Add the council to [PROGRESS.md](../PROGRESS.md).

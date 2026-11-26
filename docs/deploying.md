@@ -10,9 +10,22 @@ npm run build && npm start   # production build and run
 
 npm test             # unit tests (offline)
 npm run test:live    # tests against the real council services
+npm run check:sources   # which councils' sources still work (see below)
 npm run typecheck
 npm run lint
 ```
+
+## Checking the councils every week
+
+Councils change their websites without notice, which breaks their lookups. Every Monday, run:
+
+```bash
+npm run check:sources
+```
+
+It looks up each council's sample address through the real pipeline, one council at a time (about 15 minutes), and ends with a list of the councils that failed and why. To check a few again after a fix, name them: `npm run check:sources -- qld/logan wa/`.
+
+A council that fails once may just have been down. If it fails again the next week, open an issue for it, then look at its site for what changed. The sample addresses are in `test/live/addresses.ts`.
 
 ## Settings
 

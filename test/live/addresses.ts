@@ -1,3 +1,5 @@
+import type { BinDaysResult } from '../../src/service.js';
+
 /**
  * Known residential addresses per council, in the varied formats people type.
  * This is the place to drop in an address you want checked. Add at least one
@@ -233,3 +235,22 @@ export const ADDRESSES: Record<string, string[]> = {
   'wa/vincent': ['313 Vincent Street, Leederville WA 6007'],
   'wa/armadale': ['7 Orchard Avenue, Armadale WA 6112'],
 };
+
+/**
+ * What is wrong with a sample address's answer, if anything: the check the live
+ * tests and `npm run check:sources` both make.
+ */
+export function problemWith(
+  result: Pick<BinDaysResult, 'council' | 'address' | 'services' | 'days'>,
+  councilId: string,
+): string | undefined {
+  if (result.council.id !== councilId) return `went to ${result.council.id}`;
+  // Most sources match a property. Suburb- and zone-based ones only know the locality.
+  const { streetName = '', suburb = '' } = result.address.parts;
+  if (!new RegExp(`${streetName}|${suburb}`, 'i').test(result.address.matched)) {
+    return `matched a different address: ${result.address.matched}`;
+  }
+  if (!result.services.some((s) => s.type === 'general')) return 'no general waste bin';
+  if (!result.days.length) return 'no collection days in the next two weeks';
+  return undefined;
+}

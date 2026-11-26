@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_COUNCILS } from '../../src/councils/index.js';
 import { BinDaysService } from '../../src/service.js';
-import { ADDRESSES } from './addresses.js';
+import { ADDRESSES, problemWith } from './addresses.js';
 
 /** Addresses that don't exist. These must fail, not match a neighbour. */
 const NOT_FOUND = [
@@ -25,15 +25,7 @@ describe.each(ALL_COUNCILS.map((c) => [c.id] as const))('%s', (id) => {
   });
 
   it.each(ADDRESSES[id] ?? [])('%s', async (address) => {
-    const result = await service.lookup({ address });
-    expect(result.council.id).toBe(id);
-    // Most sources match a property. Suburb- and zone-based ones only know the locality.
-    const { streetName = '', suburb = '' } = result.address.parts;
-    expect(result.address.matched.toUpperCase()).toMatch(
-      new RegExp(`${streetName}|${suburb}`.toUpperCase()),
-    );
-    expect(result.services.map((s) => s.type)).toContain('general');
-    expect(result.days.length).toBeGreaterThan(0);
+    expect(problemWith(await service.lookup({ address }), id)).toBeUndefined();
   });
 });
 
