@@ -36,6 +36,13 @@ const rise = {
   hidden: { opacity: 0, y: 14 },
   shown: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24 } },
 } as const;
+/** Below the street, each part rises in as it scrolls into view rather than all at once. */
+const onView = {
+  variants: rise,
+  initial: 'hidden',
+  whileInView: 'shown',
+  viewport: { once: true, margin: '0px 0px -40px' },
+} as const;
 
 export function Result({ result, onShown }: { result: BinDaysResult; onShown?: () => void }) {
   // Lets the page add what goes below the answer only once the answer is on screen.
@@ -110,7 +117,7 @@ export function Result({ result, onShown }: { result: BinDaysResult; onShown?: (
         </m.div>
 
         {next && (
-          <m.div variants={rise}>
+          <m.div {...onView}>
             <WeekStrip
               days={result.days}
               today={today}
@@ -121,7 +128,7 @@ export function Result({ result, onShown }: { result: BinDaysResult; onShown?: (
         )}
 
         {later.length > 0 && (
-          <m.div variants={rise}>
+          <m.div {...onView}>
             <Stack gap="xs">
               <Title order={3} size="h4">
                 After that
@@ -137,7 +144,7 @@ export function Result({ result, onShown }: { result: BinDaysResult; onShown?: (
           </m.div>
         )}
 
-        <m.div variants={rise}>
+        <m.div {...onView}>
           <Stack gap="xs">
             <Title order={3} size="h4">
               Your bins
@@ -156,7 +163,7 @@ export function Result({ result, onShown }: { result: BinDaysResult; onShown?: (
           </Stack>
         </m.div>
 
-        <m.div variants={rise}>
+        <m.div {...onView}>
           <SaveAndShare address={address.input} />
         </m.div>
       </Stack>
@@ -194,6 +201,7 @@ function StreetCaption({
             className="caption-bin"
             style={{ '--lid': lidPaint(bin) } as React.CSSProperties}
           >
+            <BinIcon type={bin.type} colour={bin.colour} size={24} />
             {bin.name}
             {bin.confidence === 'projected' && <Estimated />}
           </span>
